@@ -1,0 +1,13 @@
+fight_stage
+question_stage
+completed_stage
+train
+shop
+acquire_ego_gift
+reward_money
+reward_gamble
+reward_ego_resource
+reward_random_ego
+reward_star
+A_choices
+B_choices

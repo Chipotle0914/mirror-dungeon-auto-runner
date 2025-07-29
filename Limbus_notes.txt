@@ -1,0 +1,106 @@
+After a fight,
+Scenario 1: press confirm to accept all ego gifts- click confirm until no more confirm
+Scenario 2: one single ego gift to accept- click card, click select
+Scenario 3: get 2~3 reward choices - click one of the cards than confirm
+Scenario 4: Scen2 into Scen3
+
+
+After question mark,
+Scenario 1: Scen1
+
+
+
+
+Installing:
+1. pip install torch torchvision opencv-python pyautogui pillow keyboard (windowpowershell with Run with administrator)
+2. pip install pytesseract pillow pyautogui keyboard opencv-python (for text image recognition)
+3.  had to install https://github.com/UB-Mannheim/tesseract/wiki 
+
+
+0.4324074074074074 0.4630208333333333
+skip button: 0.4672, 0.4389
+skil check area: 	0.0094, 0.8185, 0.7328,	0.8694
+commence\continue button: 0.8807, 0.8954
+offset for To Battle: 1.0156
+
+under reward for enter: 0.0666
+UDNER SIN cost for to battle: 0.6389
+
+udner diffuclty 40 for threads(not skill check):
+
+
+
+
+skip-m: skip mulpile times
+skip-o: optional to click
+
+
+quesiton mark stage:
+Scen1: skip-m-> pick A, B choice -> skip-m -> click proceed -> 
+slik-m -> continue -> confirm for equal gift
+
+Scen2: click skip -> pick A, B choice -> click skip -> click proceed -> skip-o -> 
+pick A, B choice -> click skip -> proceed -> skip-o -> pick A, B choice -> click skip -> continue -> accept ego gift(click confirm)
+
+Scen3: click skip -> A,B Choice-> skip-o -> proceed -> skip -> skill check -> commence -> skip-m -> continue -> accept ego gift(click confirm)
+Scen4: Scen3 without the last step
+
+Battles stages:
+Scen1: enter -> to battle -> train
+Scen2: enter -> to battle -> accept ego gift(click ego gift then click select, then click confirm)
+Scen3: enter -> to battle ->   accept ego gift -> reward choice(pick reward choice then click confirm)
+Scen4: enter -> to battle -> reward choice
+
+
+
+Reward choies:
+Scen1: pick -> confirm
+Scen2: pick -> accept ego gift(click confirm)
+
+
+
+& "$env:APPDATA\Python\Python313\Scripts\labelImg.exe"
+
+
+✅ ez stages:
+❌ annoying stages:
+stages:
+1. yield my flesh and claim their bones: lignt blue/dark blue(complete) ✅
+2. Tearful things: white ✅
+3. Automated factory: light blue ❌ (bosses towards the end have 2 A,B chioces Scenes)
+4. Faith and Erosion: orange ✅
+5. To be cleaved: beige ✅ 
+6. A certain world: purple ✅
+7. Devoured Gluttyony: Green ✅
+8. The forgotten: red ✅
+9. Lake World: green blue✅
+10. Emotional repression: dark red✅
+11. Tread wheel Sloth: yellow ✅
+12.Van pride: dark blue (have whale, and whale mini boss quite strong) ❌ (same reason with factory)
+13. The unloving: light blue✅
+14. S.E.A:green ✅
+15. Emotional Flood: ocean blue ✅
+16.Murder on the Warp express: special design blue ✅
+17. slicers and dicers: biege ✅
+18. The outcast: red✅
+19. hell's chicken: red✅
+20. emotional subservices: dark blue✅
+21. degraded doom: dark blue✅
+22 time killing time: special design✅
+23.Nagal and hammer: orange✅
+24. Flat game brokers: light blue✅
+25. Emotional judgement: dark purple ✅
+26. Hatred and dispear: special design ✅✅✅
+27. insignificant envy: dark purple ✅
+28. Nest,worshop, and technology: white✅
+29.Emotional indolence: yellow✅
+30. repressed wrath: dark red✅
+31. LCB regular check-up: speical design (red)✅
+32. To be crushed: beige ❌ (factory boss)
+33. The unconfronting❌(final boss have one skill check)
+34. Addicting lust: orange
+35.miracle in district 20: dark red✅
+36. crusher and breaker: biege
+37. Dregs of manor: purple
+38. nocturnal sweeping:special design❌ (final boss takes too long, 3 waves of enmies)
+39. Falling waters: white

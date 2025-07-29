@@ -1,0 +1,18 @@
+train: C:/Users/tmkia/OneDrive/Desktop/limbus_auto/limbus_images/images/train
+val: C:/Users/tmkia/OneDrive/Desktop/limbus_auto/limbus_images/images/train  # use same folder for now
+
+names:
+  - fight_stage
+  - question_stage
+  - completed_stage
+  - train
+  - shop
+  - acquire_ego_gift
+  - reward_money
+  - reward_gamble
+  - reward_ego_resource
+  - reward_random_ego
+  - reward_star
+  - A_choicesz
+  - B_choices
+
