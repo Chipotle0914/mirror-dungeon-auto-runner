@@ -47,6 +47,7 @@ def find_text_coordinates(target, crop_right_percentage, crop_bottom_percentage,
     # Apply threshold to boost contrast
     gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
     
+    """
     if(target == "Difficulty"):
     
         # Apply median blur to reduce noise
@@ -57,7 +58,7 @@ def find_text_coordinates(target, crop_right_percentage, crop_bottom_percentage,
                        [-1, 5,-1],
                        [0, -1, 0]])
         gray = cv2.filter2D(gray, -1, kernel)
-   
+    """
     """
     # Save the cropped image as a PNG to inspect it visually
     
