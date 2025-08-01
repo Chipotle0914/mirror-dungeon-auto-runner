@@ -151,7 +151,7 @@ def skill_check():
     sys.exit()
 skill_check()
 """
-if (comm_cooords := scan_box_region_for_text_easyocr_ratio("commence", 0.7979, 0.8398, 0.9682, 0.9528)):
-    click_at_position(*comm_cooords)
+#if (comm_cooords := scan_box_region_for_text_easyocr_ratio("commence", 0.7979, 0.8398, 0.9682, 0.9528)):
+    #click_at_position(*comm_cooords)
 with mouse.Listener(on_click=on_click) as listener:
     listener.join()
