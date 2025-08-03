@@ -50,7 +50,7 @@ def find_text_coordinates(target, crop_right_percentage, crop_bottom_percentage,
 
     # Apply threshold to boost contrast
     gray = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)[1]
-    
+ 
     if(target == "Difficulty"):
     
         # Apply median blur to reduce noise
@@ -61,6 +61,7 @@ def find_text_coordinates(target, crop_right_percentage, crop_bottom_percentage,
                        [-1, 5,-1],
                        [0, -1, 0]])
         gray = cv2.filter2D(gray, -1, kernel)
+
    
     """
     # Save the cropped image as a PNG to inspect it visually
@@ -220,8 +221,8 @@ def perform_actions():
     move_mouse_away()
 
     #click on level 50
-    if(level_diff := find_text_coordinates("Difficulty", 0, 50, 0, 0.138)):
-        click_at_position(*level_diff)
+    if(diff_coords := scan_box_region_for_text_easyocr_ratio("difficulty", 0.2599, 0.5639, 0.7385, 0.7889)):
+        click_at_position(*diff_coords)
     else:
         sys.exit()
     
@@ -276,7 +277,6 @@ def perform_actions():
             pyautogui.press("p")
             time.sleep(0.3)
             pyautogui.press("enter")
-            time.sleep(2)
     return flag
 
 def start_program():
