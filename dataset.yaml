@@ -13,6 +13,6 @@ names:
   - reward_ego_resource
   - reward_random_ego
   - reward_star
-  - A_choicesz
+  - A_choices
   - B_choices
 
