@@ -221,7 +221,7 @@ def perform_actions():
     move_mouse_away()
 
     #click on level 50
-    if(diff_coords := scan_box_region_for_text_easyocr_ratio("difficulty", 0.2599, 0.5639, 0.7385, 0.7889)):
+    if(diff_coords := scan_box_region_for_text_easyocr_ratio("enter", 0.2667, 0.5861, 0.7109, 0.7667)):
         click_at_position(*diff_coords)
     else:
         sys.exit()

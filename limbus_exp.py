@@ -134,7 +134,7 @@ def perform_actions():
     move_mouse_away()
     
     #now click on battle to enter the fight!
-    if (sin_coords := find_text_coordinates("sin", 50, 0, 0, 0.6389)):
+    if (sin_coords := find_text_coordinates("si", 50, 0, 0, 0.6389)):
         click_at_position(*sin_coords)
         time.sleep(2)
     else:

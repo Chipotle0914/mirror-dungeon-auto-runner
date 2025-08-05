@@ -10,7 +10,7 @@ import sys
 
 # Load YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train8/weights/best.pt')
-model.conf = 0.7 
+model.conf = 0.8 
 
 # Initialize EasyOCR reader once
 reader = easyocr.Reader(['en'], gpu=True)
@@ -39,7 +39,7 @@ SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
 COMMENCE_CONTINUE_PROCEED_REGION = (0.7438, 0.7713, 0.9927, 0.9667)
 SKILL_CHECK_REGION = (0.0042, 0.8185, 0.7849, 0.8759)
 
-DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_GAMBLE, REWARD_RANDOM, REWARD_RESOURCE]
+DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
 #move cursor to targeted class and click
 def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
@@ -52,19 +52,26 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     results = model(screenshot_rgb)
     detections = results.pandas().xyxy[0]
 
-    # Filter for target class
-    match = detections[detections['name'] == target_class]
+      # Filter for target class and confidence threshold
+    match = detections[
+        (detections['name'] == target_class) &
+        (detections['confidence'] >= model.conf)
+    ]
 
     if match.empty:
         print(f"❌ '{target_class}' not found.")
         return False
 
     ####DEBUG
+    match = match.sort_values(by='confidence', ascending=False)
+    det_conf = match.iloc[0]['confidence']
+
     if target_class == ACQUIRE_EGO:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_acquire_ego_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
+        print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
     ####DEBUG
     # Get target box
     if top_most:
@@ -90,9 +97,8 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
 
     return True
 
-#scan a area of screen with easyorc to find specic text
-def scan_box_click_text(target, region, moveTo_flag = 1,click_flag = 1):
-
+# scan an area of screen with easyocr to find specific text
+def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
     x1_ratio, y1_ratio, x2_ratio, y2_ratio = region
     screen_w, screen_h = pyautogui.size()
 
@@ -109,15 +115,44 @@ def scan_box_click_text(target, region, moveTo_flag = 1,click_flag = 1):
 
     results = reader.readtext(img)
     print(results)
+
     for (bbox, text, conf) in results:
-        if target.lower() in text.lower():
-            center_x = int((bbox[0][0] + bbox[2][0]) / 2) + x1
-            center_y = int((bbox[0][1] + bbox[2][1]) / 2) + y1
-            print(f"✅ Found '{text}' at ({center_x}, {center_y}) with confidence {conf:.2f}")
-            
+        text_lower = text.lower().strip()
+        target_lower = target.lower().strip()
+
+        if target_lower in text_lower:
+            box_width = bbox[2][0] - bbox[0][0]
+            box_height_center = (bbox[0][1] + bbox[2][1]) / 2
+
+            words = text_lower.split()
+            print("all detected word: ", words)
+            # Find position of target in the word list
+            try:
+                idx = words.index(target_lower)
+            except ValueError:
+                idx = -1  # target not found as exact word
+
+            if idx in [0, 1]:
+                click_x = bbox[0][0] + box_width * 0.25
+                print(f"🎯 Target '{target}' is in the first two words → clicking 1/4 from left.")
+            elif idx in [len(words) - 1, len(words) - 2]:
+                click_x = bbox[0][0] + box_width * 0.85
+                print(f"🎯 Target '{target}' is in the last two words → clicking 3/4 from left.")
+            else:
+                click_x = (bbox[0][0] + bbox[2][0]) / 2
+                print(f"🎯 Target '{target}' in middle → clicking center.")
+
+            click_y = box_height_center
+
+            # Convert to absolute screen coords
+            click_x += x1
+            click_y += y1
+
+            print(f"✅ Found '{text}' at ({click_x:.0f}, {click_y:.0f}) with confidence {conf:.2f}")
+
             if moveTo_flag:
-                pyautogui.moveTo(center_x, center_y, duration=0.2)
-            
+                pyautogui.moveTo(click_x, click_y, duration=0.2)
+
             for _ in range(click_flag):
                 pyautogui.click()
                 time.sleep(0.2)
@@ -126,7 +161,6 @@ def scan_box_click_text(target, region, moveTo_flag = 1,click_flag = 1):
 
     print(f"❌ '{target}' not found in region.")
     return False
-
 
 #clicking functions
 def click_enter():
@@ -181,13 +215,11 @@ def click_best_skill_check():
 
 def click_reward_prior():
     for target in DEFAULT_PRIOR:
-        found = yolo_detect_click(target)
-        if found:
+        if yolo_detect_click(target):
             print(f"🎯 Picked reward: {target}")
-            return True
+            return target
     print("❌ No preferred rewards found.")
-    return False
-
+    return None
 #reset the view of the level
 def reset_view():
     screen_w, screen_h = pyautogui.size()
@@ -220,24 +252,38 @@ def process_fight():
                 break
             else:
                 continue
-        #Scen2: pick reward choice
+        # Scen2: pick reward choice
         elif check_reward():
-            #wait for cards to load
-            time.sleep(1.5)
-            #choose based on priority
-            if click_reward_prior():
+            time.sleep(1.5)  # wait for cards to load
+            
+            picked_class = click_reward_prior()  # now returns class name or None
+
+            if picked_class:
                 time.sleep(1)
-                click_confirm()
-                time.sleep(3)
-                continue
-            else:
-                #the 33 percent where we still are on the reward screen, but we need to click confirm
-                if check_confirm():
+
+                # Special case: gamble or random ego gift might trigger extra confirm
+                if picked_class in [REWARD_GAMBLE, REWARD_RANDOM]:
                     click_confirm()
                     time.sleep(1)
+                    print(f"⏳ Waiting for confirm prompt due to special reward: {picked_class}")
+                    if check_confirm():
+                        click_confirm()
+                        time.sleep(3)
+                        continue
+                else:
+                    click_confirm()
+                    time.sleep(3)
                     continue
+
+            # Fallback confirm if no reward was picked
+            elif check_confirm():
+                click_confirm()
+                time.sleep(1)
+                continue
         #Scen3: accept ego gift by select + confirm
         elif yolo_detect_click(ACQUIRE_EGO):
+            #make sure ego selected
+            time.sleep(0.8)
             if click_select():
                 #it takes time for confirm button to show
                 time.sleep(1.5)
