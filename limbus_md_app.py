@@ -66,9 +66,9 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     match = match.sort_values(by='confidence', ascending=False)
     det_conf = match.iloc[0]['confidence']
 
-    if target_class == ACQUIRE_EGO:
+    if target_class == SHOP:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        debug_img_path = f"debug_acquire_ego_{timestamp}.png"
+        debug_img_path = f"debug_SHOP_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
         print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
@@ -121,26 +121,32 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
         target_lower = target.lower().strip()
 
         if target_lower in text_lower:
-            box_width = bbox[2][0] - bbox[0][0]
-            box_height_center = (bbox[0][1] + bbox[2][1]) / 2
+            xs = [point[0] for point in bbox]
+            ys = [point[1] for point in bbox]
+            box_left = min(xs)
+            box_right = max(xs)
+            box_width = box_right - box_left
+            box_height_center = (min(ys) + max(ys)) / 2
 
             words = text_lower.split()
-            print("all detected word: ", words)
-            # Find position of target in the word list
-            try:
-                idx = words.index(target_lower)
-            except ValueError:
-                idx = -1  # target not found as exact word
+            print("all detected words:", words)
+
+            # Find first word that CONTAINS the target
+            idx = -1
+            for i, word in enumerate(words):
+                if target_lower in word:
+                    idx = i
+                    break
 
             if idx in [0, 1]:
-                click_x = bbox[0][0] + box_width * 0.25
+                click_x = box_left + box_width * 0.25
                 print(f"🎯 Target '{target}' is in the first two words → clicking 1/4 from left.")
-            elif idx in [len(words) - 1, len(words) - 2]:
-                click_x = bbox[0][0] + box_width * 0.85
+            elif idx in [len(words) - 2, len(words) - 1]:
+                click_x = box_left + box_width * 0.85
                 print(f"🎯 Target '{target}' is in the last two words → clicking 3/4 from left.")
             else:
-                click_x = (bbox[0][0] + bbox[2][0]) / 2
-                print(f"🎯 Target '{target}' in middle → clicking center.")
+                click_x = (box_left + box_right) / 2
+                print(f"🎯 Target '{target}' in middle or unknown → clicking center.")
 
             click_y = box_height_center
 
@@ -231,8 +237,8 @@ def reset_view():
     y = y_ratio * screen_h
 
     pyautogui.moveTo(x, y, duration=0.2)
-    for _ in range(3):
-        pyautogui.scroll(-500)
+    for _ in range(1):
+        pyautogui.scroll(-50)
         time.sleep(0.2)
 
 time.sleep(2)
@@ -364,10 +370,27 @@ def process_question():
 
 
 def test_features():
-    click_enter()
-    time.sleep(2)
-    #process_question()
-    process_fight()
+    #auto run util shop
+    while True:
+        if yolo_detect_click(SHOP, 0):
+            print("MD run till shop successful!")
+            break
+        elif yolo_detect_click(QUESTION):
+            time.sleep(1)
+            click_enter()
+            time.sleep(0.8)
+            process_question()
+            reset_view()
+            time.sleep(0.5)
+        elif yolo_detect_click(FIGHT):
+            time.sleep(1)
+            click_enter()
+            time.sleep(0.8)
+            process_fight()
+            reset_view()
+            time.sleep(0.5) 
+
+
+
 if __name__ == "__main__":
-    time.sleep(2)
     test_features()

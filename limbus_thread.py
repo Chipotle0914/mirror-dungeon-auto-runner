@@ -217,6 +217,10 @@ def perform_actions():
             click_at_position(*reward_coords)
             time.sleep(2)
             break
+        elif (confirm_coords := scan_box_region_for_text_easyocr_ratio("confirm", 0.7193, 0.6630, 0.9771, 0.9241)):
+            click_at_position(*confirm_coords)
+            time.sleep(2)
+            break
     #move cursor out of the way(avoid detection erorrs)
     move_mouse_away()
 
