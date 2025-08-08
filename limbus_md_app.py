@@ -9,7 +9,7 @@ import keyboard
 import sys
 
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train8/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train9/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
@@ -29,19 +29,27 @@ REWARD_RANDOM = "reward_random_ego"
 REWARD_STAR = "reward_star"
 A_CHOICES = "A_choices"
 B_CHOICES = "B_choices"
+GOOD_PACK = "good_pack"
+BAD_PACK = "bad_pack"
 ENTER_REGION = (0.7547, 0.6611, 0.9891, 0.8546)
 TO_BATTLE_REGION = (0.8047, 0.7306, 0.9870, 0.9620)
+TO_BATTLE_BACKUP_REGION = (0.7786, 0.5694, 0.9938, 0.9528)
 CONFIRM_REGION = (0.0854, 0.5741, 0.9547, 0.9194)
 SELECT_REGION = (0.7646, 0.7972, 0.9943, 0.9889)
 REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
 P_ENTER_REGION = (0.6245, 0.6491, 0.9307, 0.8935)
 SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
 COMMENCE_CONTINUE_PROCEED_REGION = (0.7438, 0.7713, 0.9927, 0.9667)
+LEAVE_REGION = (0.7536, 0.7917, 0.9880, 0.9630)
+SHOP_COMFIRM_REGION = (0.4167, 0.4620, 0.7792, 0.8481)
 SKILL_CHECK_REGION = (0.0042, 0.8185, 0.7849, 0.8759)
-
+ENDING_SCREEN_TOP_LEFT_REGION = (0.0005, 0.0907, 0.3203, 0.2815)
+ENDING_SCREEN_VICTORY_REGION = (0.7438, 0.0620, 0.9547, 0.2583)
+ENDING_SCREEN_CONFIRM = (0.6839, 0.6769, 0.9635, 0.9500)
+BOSS_X_OFFSET = 0.2005
 DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
 #move cursor to targeted class and click
-def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False):
+def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
     
     # Capture screenshot
@@ -66,9 +74,9 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     match = match.sort_values(by='confidence', ascending=False)
     det_conf = match.iloc[0]['confidence']
 
-    if target_class == ACQUIRE_EGO:
+    if target_class in [REWARD_MONEY, REWARD_GAMBLE, REWARD_STAR, REWARD_RANDOM, REWARD_RESOURCE]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        debug_img_path = f"debug_ACQUIRE_EGO_{timestamp}.png"
+        debug_img_path = f"debug_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
         print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
@@ -85,20 +93,46 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     center_x = int((x1 + x2) / 2)
     center_y = int((y1 + y2) / 2)
 
+    # 🔍 SHOP-specific condition: check if left of TRAIN
+    if target_class == SHOP:
+        train_match = detections[
+            (detections['name'] == TRAIN) & 
+            (detections['confidence'] >= model.conf)
+        ]
+        if train_match.empty:
+            print("⚠️ SHOP found but TRAIN not detected — skipping SHOP.")
+            return False
+        train = train_match.sort_values(by='confidence', ascending=False).iloc[0]
+        train_x1, train_x2 = train[['xmin', 'xmax']]
+        train_center_x = int((train_x1 + train_x2) / 2)
+
+        if center_x < train_center_x:
+            print(f"❌ Ignored SHOP — not left of TRAIN (SHOP X: {center_x}, TRAIN X: {train_center_x})")
+            return False
+        else:
+            print(f"✅ SHOP is left of TRAIN → proceeding (SHOP X: {center_x}, TRAIN X: {train_center_x})")
+
     print(f"✅ Found '{target_class}' at ({center_x}, {center_y})")
 
     pyautogui.moveTo(center_x, center_y, duration=0.2)
     
+    #drag down
+    if drag_down:
+        pyautogui.mouseDown(center_x, center_y)
+        pyautogui.moveTo(center_x, center_y + 400, duration=0.2)
+        pyautogui.mouseUp()
+        print("Successfully Selected Theme pack!")
+    else:
     #click for click_num
-    for _ in range(click_num):
-        pyautogui.click()
-        time.sleep(0.2)
-    print(f"🖱️ Clicked on '{target_class}'")
+        for _ in range(click_num):
+            pyautogui.click()
+            time.sleep(0.3)
+        print(f"🖱️ Clicked on '{target_class}'")
 
     return True
 
 # scan an area of screen with easyocr to find specific text
-def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
+def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0):
     x1_ratio, y1_ratio, x2_ratio, y2_ratio = region
     screen_w, screen_h = pyautogui.size()
 
@@ -107,6 +141,9 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
     y1 = int(screen_h * y1_ratio)
     x2 = int(screen_w * x2_ratio)
     y2 = int(screen_h * y2_ratio)
+
+    #Convert offsets as well
+    y_offset = y_offset * screen_h
 
     print(f"📦 Scanning box region: ({x1}, {y1}) to ({x2}, {y2})")
 
@@ -148,10 +185,10 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
                         print("idx: ", idx)
                         break
 
-            if idx in [0, 1]:
+            if idx in [0, 1] and len(words) > 1:
                 click_x = box_left + box_width * 0.25
                 print(f"🎯 Target '{target}' is in the first two words → clicking 1/4 from left.")
-            elif idx in [len(words) - 2, len(words) - 1]:
+            elif idx in [len(words) - 2, len(words) - 1] and len(words) > 1:
                 click_x = box_left + box_width * 0.85
                 print(f"🎯 Target '{target}' is in the last two words → clicking 3/4 from left.")
             else:
@@ -164,6 +201,9 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
             click_x += x1
             click_y += y1
 
+            #add y_offset
+            click_y += y_offset
+
             print(f"✅ Found '{text}' at ({click_x:.0f}, {click_y:.0f}) with confidence {conf:.2f}")
 
             if moveTo_flag:
@@ -171,7 +211,7 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
 
             for _ in range(click_flag):
                 pyautogui.click()
-                time.sleep(0.2)
+                time.sleep(0.3)
                 print(f"🖱️ Clicked on '{target}'")
             return True
 
@@ -184,7 +224,7 @@ def click_enter():
 
 
 def click_to_battle():
-    scan_box_click_text("battle", TO_BATTLE_REGION)
+    return scan_box_click_text("battle", TO_BATTLE_REGION)
 
 def click_confirm():
     return scan_box_click_text("confirm", CONFIRM_REGION)
@@ -201,6 +241,17 @@ def check_reward():
 def check_p_enter():
     return scan_box_click_text("win", P_ENTER_REGION, 0, 0) or scan_box_click_text("damage", P_ENTER_REGION, 0, 0)
 
+def check_ending():
+    return (
+        scan_box_click_text("most", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
+        or scan_box_click_text("valued", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
+        or scan_box_click_text("damage", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
+        or scan_box_click_text("contributed", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
+        or scan_box_click_text("most", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
+        or scan_box_click_text("Victory", ENDING_SCREEN_VICTORY_REGION, 0, 0)
+        or scan_box_click_text("confirm", ENDING_SCREEN_CONFIRM)
+    )
+
 def click_skip_5_times():
     return scan_box_click_text("skip", SKIP_REGION, 1, 5)
 
@@ -212,6 +263,22 @@ def click_commence():
 
 def click_proceed():
     return scan_box_click_text("proceed", COMMENCE_CONTINUE_PROCEED_REGION)
+
+def click_leave():
+    return scan_box_click_text("leave", LEAVE_REGION)
+
+def click_shop_confirm():
+    return scan_box_click_text("confirm", SHOP_COMFIRM_REGION, y_offset = -0.0224)
+
+def click_boss():
+    screen_w, screen_h= pyautogui.size()
+    x, y = pyautogui.position()
+    #move to boss room
+    target_x = x + int(BOSS_X_OFFSET * screen_w)
+    #adjust slighly downwards to make sure it always hits the boss room
+    y += (0.0324 * screen_h)
+    pyautogui.moveTo(target_x, y, duration=0.2)
+    pyautogui.click()
 
 def check_skil_check():
     for best_skill in ["very high", "high", "normal", "low", "very low"]:
@@ -256,18 +323,35 @@ time.sleep(2)
 #yolo_detect_click(FIGHT)
 
 
-def process_fight():
+def process_fight(boss_fight=False):
     # start the battle
-    click_to_battle()
+    while True:
+        if click_to_battle() or scan_box_click_text("clear", TO_BATTLE_BACKUP_REGION, 1, 0, 0.1537):
+            pyautogui.click()
+            time.sleep(0.3)
+            break
+    
+    #time sleep here so it stop accidetnally misread themepacks and ego gifts
+    time.sleep(1.5)
     #fight until encounter end of fights scenarios
     while True:
-        #Scen1: go back to train
-        if yolo_detect_click(TRAIN, 0):
+        #Exit for ending the run
+        if check_ending():
+            print("CONGRATS FINISHING A WHOLE RUN!")
+            break
+            
+        # 🛑 Exit for regular fights: check for train
+        if not boss_fight and yolo_detect_click(TRAIN, 0):
             time.sleep(1)
             if yolo_detect_click(TRAIN, 0):
                 break
             else:
                 continue
+        # 🛑 Exit for boss fight: check theme packs
+        if boss_fight and (yolo_detect_click(GOOD_PACK, 0) or yolo_detect_click(BAD_PACK, 0)):
+            print("🛑 Boss fight ended — good or bad pack found.")
+            break
+            
         # Scen2: pick reward choice
         elif check_reward():
             time.sleep(1.5)  # wait for cards to load
@@ -304,7 +388,7 @@ def process_fight():
                 #it takes time for confirm button to show
                 time.sleep(1.5)
                 if click_confirm():
-                    time.sleep(2)
+                    time.sleep(2.5)
                     continue
                 else:
                     sys.exit("ACQUIRE_EGO Error: confirm")
@@ -382,7 +466,11 @@ def process_question():
 def test_features():
     #auto run util shop
     while True:
-        if yolo_detect_click(SHOP, 0):
+        if yolo_detect_click(SHOP):
+            print("MD run till shop successful!")
+            break
+        #check twice
+        elif yolo_detect_click(SHOP):
             print("MD run till shop successful!")
             break
         elif yolo_detect_click(QUESTION):
@@ -398,9 +486,45 @@ def test_features():
             time.sleep(0.8)
             process_fight()
             reset_view()
-            time.sleep(0.5) 
+            time.sleep(1) 
 
+def test():
+    #enter shop
+    click_enter()
+    time.sleep(1)
+    #click leave
+    click_leave()
+    time.sleep(1)
+    #click confirm
+    click_shop_confirm()
+    time.sleep(2)
+    #find train
+    yolo_detect_click(TRAIN, 0)
+    #move right to click on boss
+    click_boss()
+    #wait for boss
+    time.sleep(1)
+    #click enter
+    click_enter()
+    #process boss fight
+    process_fight(boss_fight = True)
 
+   
+    yolo_detect_click(GOOD_PACK, drag_down = True)
+    time.sleep(3)
 
 if __name__ == "__main__":
-    test_features()
+    while True:
+        if scan_box_click_text("enter", ENTER_REGION, 0, 0):
+            print("processing boss until next level!!!")  
+            test()           # Run post-shop boss path and process boss fight
+            time.sleep(2) 
+        else:
+            print("processing until shop!!!")
+            test_features()  # Run through Mirror Dungeon normally until shop
+            time.sleep(2)
+
+    
+
+       
+        
