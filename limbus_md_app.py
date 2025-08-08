@@ -66,9 +66,9 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     match = match.sort_values(by='confidence', ascending=False)
     det_conf = match.iloc[0]['confidence']
 
-    if target_class == SHOP:
+    if target_class == ACQUIRE_EGO:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        debug_img_path = f"debug_SHOP_{timestamp}.png"
+        debug_img_path = f"debug_ACQUIRE_EGO_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
         print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
@@ -131,12 +131,22 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1):
             words = text_lower.split()
             print("all detected words:", words)
 
+            target_arr = target_lower.split()
             # Find first word that CONTAINS the target
             idx = -1
             for i, word in enumerate(words):
-                if target_lower in word:
-                    idx = i
-                    break
+                print("target_lower: ", target_arr, " word: ", word)
+                if len(target_arr) > 1:
+
+                    if target_arr[1] in word:
+                        idx = i
+                        print("idx: ", idx)
+                        break
+                else:
+                    if target_arr[0] in word:
+                        idx = i
+                        print("idx: ", idx)
+                        break
 
             if idx in [0, 1]:
                 click_x = box_left + box_width * 0.25
@@ -300,7 +310,7 @@ def process_fight():
                     sys.exit("ACQUIRE_EGO Error: confirm")
 
             else:
-                sys.exit("ACQUIRE_EGO Error: select")
+                continue
         #Scen4: accept ego gift by pressing confirm(or enter)
         elif check_confirm():
             if not(check_reward()):
