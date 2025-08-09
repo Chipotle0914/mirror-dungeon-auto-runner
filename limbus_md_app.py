@@ -242,16 +242,12 @@ def check_p_enter():
     return scan_box_click_text("win", P_ENTER_REGION, 0, 0) or scan_box_click_text("damage", P_ENTER_REGION, 0, 0)
 
 def check_ending():
-    return (
-        scan_box_click_text("most", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
-        or scan_box_click_text("valued", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
-        or scan_box_click_text("damage", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
-        or scan_box_click_text("contributed", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
-        or scan_box_click_text("most", ENDING_SCREEN_TOP_LEFT_REGION, 0, 0)
-        or scan_box_click_text("Victory", ENDING_SCREEN_VICTORY_REGION, 0, 0)
-        or scan_box_click_text("confirm", ENDING_SCREEN_CONFIRM)
-    )
-
+    #scan_box_click_text("confirm", ENDING_SCREEN_CONFIRM)
+    if scan_box_click_text("contributed", ENDING_SCREEN_TOP_LEFT_REGION, 1, 0):
+        scan_box_click_text("confirm", ENDING_SCREEN_CONFIRM)
+        return True
+    else:
+        return False
 def click_skip_5_times():
     return scan_box_click_text("skip", SKIP_REGION, 1, 5)
 
@@ -336,7 +332,7 @@ def process_fight(boss_fight=False):
     #fight until encounter end of fights scenarios
     while True:
         #Exit for ending the run
-        if check_ending():
+        if boss_fight and check_ending():
             print("CONGRATS FINISHING A WHOLE RUN!")
             break
             
@@ -354,7 +350,7 @@ def process_fight(boss_fight=False):
             
         # Scen2: pick reward choice
         elif check_reward():
-            time.sleep(1.5)  # wait for cards to load
+            time.sleep(2)  # wait for cards to load
             
             picked_class = click_reward_prior()  # now returns class name or None
 
@@ -458,6 +454,11 @@ def process_question():
             click_best_skill_check()
             time.sleep(1)
             continue
+        
+        #if accidentally misread
+        elif check_p_enter():
+            process_fight()
+            break
         else:
             click_skip_5_times()
             time.sleep(1)
