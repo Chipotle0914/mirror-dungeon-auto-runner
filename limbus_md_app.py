@@ -269,6 +269,9 @@ def click_leave():
 def click_shop_confirm():
     return scan_box_click_text("confirm", SHOP_COMFIRM_REGION, y_offset = -0.0224)
 
+def check_to_battle():
+    return scan_box_click_text("battle", TO_BATTLE_REGION, 0, 0)
+
 def click_boss():
     screen_w, screen_h= pyautogui.size()
     x, y = pyautogui.position()
@@ -349,7 +352,7 @@ def process_fight(boss_fight=False):
             
         # Scen2: pick reward choice
         elif check_reward():
-            time.sleep(2)  # wait for cards to load
+            time.sleep(3)  # wait for cards to load
             
             picked_class = click_reward_prior()  # now returns class name or None
 
@@ -459,9 +462,9 @@ def process_question():
             click_best_skill_check()
             time.sleep(1)
             continue
-        
-        #if accidentally misread
-        elif check_p_enter():
+
+        #if accidentally misread or special encounters(pressing choice A becomes a fight)
+        elif check_p_enter() or check_to_battle():
             process_fight()
             break
         elif check_leave():
