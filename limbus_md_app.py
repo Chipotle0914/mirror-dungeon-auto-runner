@@ -378,21 +378,19 @@ def process_fight(boss_fight=False):
                 click_confirm()
                 time.sleep(1)
                 continue
-        #Scen3: accept ego gift by select + confirm
+        # Scen3: accept ego gift by select + confirm
+        #adding continues because sometimes the ego won't be clicked
         elif yolo_detect_click(ACQUIRE_EGO):
-            #make sure ego selected
-            time.sleep(0.8)
-            if click_select():
-                #it takes time for confirm button to show
-                time.sleep(1.5)
-                if click_confirm():
-                    time.sleep(2.5)
-                    continue
-                else:
-                    sys.exit("ACQUIRE_EGO Error: confirm")
-
-            else:
+            time.sleep(0.8)  # make sure ego is selected
+            if not click_select():
                 continue
+
+            time.sleep(1.5)  # wait for confirm button to show
+            if not click_confirm():
+                continue
+
+            time.sleep(2.5)
+            continue
         #Scen4: accept ego gift by pressing confirm(or enter)
         elif check_confirm():
             if not(check_reward()):
