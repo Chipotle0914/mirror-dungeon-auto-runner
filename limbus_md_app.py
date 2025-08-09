@@ -472,7 +472,7 @@ def process_question():
             time.sleep(1)
 
 
-def test_features():
+def process_start_to_shop():
     #auto run util shop
     while True:
         if yolo_detect_click(SHOP) or check_leave():
@@ -497,7 +497,7 @@ def test_features():
             reset_view()
             time.sleep(1) 
 
-def test():
+def process_shop_boss_packs():
     #enter shop
     click_enter()
     time.sleep(1)
@@ -528,13 +528,13 @@ if __name__ == "__main__":
     while True:
         if scan_box_click_text("enter", ENTER_REGION, 0, 0):
             print("processing boss until next level!!!")  
-            if test():
+            if process_shop_boss_packs():
                 print("We DONE!!!")
                 break           # Run post-shop boss path and process boss fight
             time.sleep(2) 
         else:
             print("processing until shop!!!")
-            test_features()  # Run through Mirror Dungeon normally until shop
+            process_start_to_shop()  # Run through Mirror Dungeon normally until shop
             time.sleep(2)
 
     
