@@ -74,7 +74,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     match = match.sort_values(by='confidence', ascending=False)
     det_conf = match.iloc[0]['confidence']
 
-    if target_class in [REWARD_MONEY, REWARD_GAMBLE, REWARD_STAR, REWARD_RANDOM, REWARD_RESOURCE]:
+    if target_class in [GOOD_PACK, BAD_PACK]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
@@ -346,7 +346,12 @@ def process_fight(boss_fight=False):
             else:
                 continue
         # 🛑 Exit for boss fight: check theme packs
+        # some how it was possible to find a pack during a fight
         if boss_fight and (yolo_detect_click(GOOD_PACK, 0) or yolo_detect_click(BAD_PACK, 0)):
+            #do a double check
+            time.sleep(1)
+            if check_p_enter():
+                continue
             print("🛑 Boss fight ended — good or bad pack found.")
             break
             

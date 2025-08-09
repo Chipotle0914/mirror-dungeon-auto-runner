@@ -104,3 +104,7 @@ stages:
 37. Dregs of manor: purple
 38. nocturnal sweeping:special design❌ (final boss takes too long, 3 waves of enmies)
 39. Falling waters: white
+
+
+
+DEBUG COMMMAND: cmd /c "chcp 65001 >nul & python -X utf8 -u .\limbus_md_app.py > debug_log.txt 2>&1"   
