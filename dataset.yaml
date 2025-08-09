@@ -15,4 +15,6 @@ names:
   - reward_star
   - A_choices
   - B_choices
+  - good_pack
+  - bad_pack
 

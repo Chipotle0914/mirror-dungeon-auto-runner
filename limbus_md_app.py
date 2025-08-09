@@ -241,6 +241,9 @@ def check_reward():
 def check_p_enter():
     return scan_box_click_text("win", P_ENTER_REGION, 0, 0) or scan_box_click_text("damage", P_ENTER_REGION, 0, 0)
 
+def check_leave():
+    return scan_box_click_text("leave", LEAVE_REGION, 0, 0)
+
 def check_ending():
     #scan_box_click_text("confirm", ENDING_SCREEN_CONFIRM)
     if scan_box_click_text("contributed", ENDING_SCREEN_TOP_LEFT_REGION, 1, 0):
@@ -331,10 +334,6 @@ def process_fight(boss_fight=False):
     time.sleep(1.5)
     #fight until encounter end of fights scenarios
     while True:
-        #Exit for ending the run
-        if boss_fight and check_ending():
-            print("CONGRATS FINISHING A WHOLE RUN!")
-            break
             
         # 🛑 Exit for regular fights: check for train
         if not boss_fight and yolo_detect_click(TRAIN, 0):
@@ -394,9 +393,15 @@ def process_fight(boss_fight=False):
         #Scen4: accept ego gift by pressing confirm(or enter)
         elif check_confirm():
             if not(check_reward()):
-                click_confirm()
-                time.sleep(1)
-                continue
+                #beofore click check if it's final stage
+                   #Exit for ending the run
+                if boss_fight and check_ending():
+                    print("CONGRATS FINISHING A WHOLE RUN!")
+                    return True
+                else:
+                    click_confirm()
+                    time.sleep(1)
+                    continue
 
             
         else:
@@ -459,6 +464,8 @@ def process_question():
         elif check_p_enter():
             process_fight()
             break
+        elif check_leave():
+            break
         else:
             click_skip_5_times()
             time.sleep(1)
@@ -467,7 +474,7 @@ def process_question():
 def test_features():
     #auto run util shop
     while True:
-        if yolo_detect_click(SHOP):
+        if yolo_detect_click(SHOP) or check_leave():
             print("MD run till shop successful!")
             break
         #check twice
@@ -508,17 +515,21 @@ def test():
     #click enter
     click_enter()
     #process boss fight
-    process_fight(boss_fight = True)
+    if process_fight(boss_fight = True):
+        return True
 
    
     yolo_detect_click(GOOD_PACK, drag_down = True)
     time.sleep(3)
+    return False
 
 if __name__ == "__main__":
     while True:
         if scan_box_click_text("enter", ENTER_REGION, 0, 0):
             print("processing boss until next level!!!")  
-            test()           # Run post-shop boss path and process boss fight
+            if test():
+                print("We DONE!!!")
+                break           # Run post-shop boss path and process boss fight
             time.sleep(2) 
         else:
             print("processing until shop!!!")
