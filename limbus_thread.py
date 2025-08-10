@@ -232,7 +232,7 @@ def perform_actions():
     
     move_mouse_away()
     #now click on battle to enter the fight!
-    if (sin_coords := find_text_coordinates("sin", 50, 0, 0, 0.6389)):
+    if (sin_coords := find_text_coordinates("si", 50, 0, 0, 0.6389)):
         click_at_position(*sin_coords)
         time.sleep(2)
     elif (battle_coords := find_text_coordinates("battle", 50, 0, 0)):
@@ -244,6 +244,8 @@ def perform_actions():
 
     #now we are in the a fight!!!
     while True:
+        coords = find_text_coordinates("reward", 0, 0, 0, 0.0667)
+        time.sleep(2)
         coords = find_text_coordinates("reward", 0, 0, 0, 0.0667)
 
         if coords:

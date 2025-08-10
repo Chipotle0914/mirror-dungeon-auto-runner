@@ -9,7 +9,7 @@ import keyboard
 import sys
 
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train9/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train11/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
