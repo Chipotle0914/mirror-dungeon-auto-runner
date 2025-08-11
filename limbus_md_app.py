@@ -76,7 +76,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     match = match.sort_values(by='confidence', ascending=False)
     det_conf = match.iloc[0]['confidence']
 
-    if target_class in [GOOD_PACK, BAD_PACK]:
+    if target_class in [GOOD_PACK, BAD_PACK, TRAIN]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
@@ -134,7 +134,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     return True
 
 # scan an area of screen with easyocr to find specific text
-def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0):
+def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0, long_click=0):
     x1_ratio, y1_ratio, x2_ratio, y2_ratio = region
     screen_w, screen_h = pyautogui.size()
 
@@ -211,6 +211,10 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0)
             if moveTo_flag:
                 pyautogui.moveTo(click_x, click_y, duration=0.2)
 
+            if long_click:
+                pyautogui.mouseDown(button="left")
+                time.sleep(duration=0.2)
+                pyautogui.mouseUp(button="left")
             for _ in range(click_flag):
                 pyautogui.click()
                 time.sleep(0.3)
@@ -235,7 +239,7 @@ def check_confirm():
     return scan_box_click_text("confirm", CONFIRM_REGION, 0, 0)
 
 def click_select():
-    return scan_box_click_text("select", SELECT_REGION)
+    return scan_box_click_text("select", SELECT_REGION, click_flag = 0, long_click = 1)
 
 def check_reward():
     return scan_box_click_text("reward", REWARD_REGION, 0, 0)
