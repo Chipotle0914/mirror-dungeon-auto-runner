@@ -583,7 +583,7 @@ def process_shop_boss_packs():
         return True
 
     #wait for packs to load
-    time.slee(2)
+    time.sleep(2)
    #if all packs are bad scenario
     count = 0
     while count < 3 or ((not yolo_detect_click(GOOD_PACK, 0)) and yolo_detect_click(BAD_PACK, 0)):
