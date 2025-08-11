@@ -586,8 +586,9 @@ def process_shop_boss_packs():
     time.sleep(2)
    #if all packs are bad scenario
     count = 0
-    while count < 3 or ((not yolo_detect_click(GOOD_PACK, 0)) and yolo_detect_click(BAD_PACK, 0)):
+    while count < 3 and ((not yolo_detect_click(GOOD_PACK, 0)) and yolo_detect_click(BAD_PACK, 0)):
         click_refresh()
+        time.sleep(3)
         count += 1
 
     yolo_detect_click(GOOD_PACK, drag_down = True)
