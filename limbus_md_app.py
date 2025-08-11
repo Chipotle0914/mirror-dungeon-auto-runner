@@ -10,7 +10,7 @@ import sys
 
 # Load YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train9/weights/best.pt')
-model.conf = 0.8 
+model.conf = 0.75 
 
 # Initialize EasyOCR reader once
 reader = easyocr.Reader(['en'], gpu=True)
@@ -366,7 +366,7 @@ def process_fight(boss_fight=False):
             
         # Scen2: pick reward choice
         elif check_reward():
-            time.sleep(3.5)  # wait for cards to load
+            time.sleep(3)  # wait for cards to load
             
             picked_class = click_reward_prior()  # now returns class name or None
 
