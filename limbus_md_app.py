@@ -251,6 +251,10 @@ def check_ending():
         return True
     else:
         return False
+
+def check_skip():
+    return scan_box_click_text("skip", SKIP_REGION, 1, 0)
+
 def click_skip_5_times():
     return scan_box_click_text("skip", SKIP_REGION, 1, 5)
 
@@ -282,7 +286,7 @@ def click_boss():
     pyautogui.moveTo(target_x, y, duration=0.2)
     pyautogui.click()
 
-def check_skil_check():
+def check_skill_check():
     for best_skill in ["very high", "high", "normal", "low", "very low"]:
         found = scan_box_click_text(best_skill, SKILL_CHECK_REGION, 0, 0)
         if found:
@@ -394,7 +398,7 @@ def process_fight(boss_fight=False):
             if not click_confirm():
                 continue
 
-            time.sleep(2.5)
+            time.sleep(3)
             continue
         #Scen4: accept ego gift by pressing confirm(or enter)
         elif check_confirm():
@@ -409,9 +413,45 @@ def process_fight(boss_fight=False):
                     time.sleep(1)
                     continue
 
+        #Scen5: deal with skill check boss
+        elif check_skip():
+            #process skill check without choice A, B
+            if not click_skip_5_times():
+                time.sleep(1)
+                click_skip_5_times
+            #do skil check
+            if check_skill_check():
+                click_best_skill_check()
+                time.sleep(1)
+            #click commence
+            if click_commence():
+                time.sleep(3)
+            else:
+                sys.exit("During battle, can't find commence")
+            if not click_skip_5_times():
+                time.sleep(1)
+                click_skip_5_times
+            #click continue
+            if click_continue():
+                time.sleep(1.5)
+                continue
+            else:
+                sys.exit("During battle, can't find continue")
             
+
         else:
             if check_p_enter():
+                screen_w, screen_h = pyautogui.size()
+                #center bottom coordinates
+                x_ratio = 0.4703
+                y_ratio = 0.6333
+
+                x = x_ratio * screen_w
+                y = y_ratio * screen_h
+
+                pyautogui.moveTo(x, y, duration=0.2)
+                #to continue with boss fight that has skill check
+                pyautogui.click()
                 pyautogui.press('p')
                 time.sleep(0.2)
                 pyautogui.press('enter')
@@ -436,13 +476,20 @@ def process_question():
             continue
         # click proceed
         elif click_proceed():
-            click_skip_5_times()
+            if not click_skip_5_times():
+                #check again
+                time.sleep(1)
+                click_skip_5_times()
+            
             time.sleep(1.5)
             continue
         #click commence
         elif click_commence():
             time.sleep(3)
-            click_skip_5_times()
+            if not click_skip_5_times():
+                #check again
+                time.sleep(1)
+                click_skip_5_times()
             time.sleep(1.5)
             continue
         #click continue(continue is always the last step)
@@ -451,17 +498,23 @@ def process_question():
             continue
         #Scen2: check A choices first
         elif yolo_detect_click(A_CHOICES, top_most=True):
-            click_skip_5_times()
+            if not click_skip_5_times():
+                #check again
+                time.sleep(1)
+                click_skip_5_times()
             time.sleep(1)
             continue
         #Scen2: check B choices Second
         elif yolo_detect_click(B_CHOICES, top_most=True):
-            click_skip_5_times()
+            if not click_skip_5_times():
+                #check again
+                time.sleep(1)
+                click_skip_5_times()
             time.sleep(1)
             continue
        
         #skill check
-        elif check_skil_check():
+        elif check_skill_check():
             click_best_skill_check()
             time.sleep(1)
             continue
