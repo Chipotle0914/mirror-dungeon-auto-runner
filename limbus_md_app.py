@@ -9,7 +9,7 @@ import keyboard
 import sys
 
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train11/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train9/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
@@ -76,7 +76,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     match = match.sort_values(by='confidence', ascending=False)
     det_conf = match.iloc[0]['confidence']
 
-    if target_class in [GOOD_PACK, BAD_PACK, TRAIN]:
+    if target_class in [GOOD_PACK, BAD_PACK, REWARD_STAR, REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
@@ -134,7 +134,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     return True
 
 # scan an area of screen with easyocr to find specific text
-def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0, long_click=0):
+def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0):
     x1_ratio, y1_ratio, x2_ratio, y2_ratio = region
     screen_w, screen_h = pyautogui.size()
 
@@ -211,10 +211,6 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0,
             if moveTo_flag:
                 pyautogui.moveTo(click_x, click_y, duration=0.2)
 
-            if long_click:
-                pyautogui.mouseDown(button="left")
-                time.sleep(duration=0.2)
-                pyautogui.mouseUp(button="left")
             for _ in range(click_flag):
                 pyautogui.click()
                 time.sleep(0.3)
@@ -239,7 +235,7 @@ def check_confirm():
     return scan_box_click_text("confirm", CONFIRM_REGION, 0, 0)
 
 def click_select():
-    return scan_box_click_text("select", SELECT_REGION, click_flag = 0, long_click = 1)
+    return scan_box_click_text("select", SELECT_REGION)
 
 def check_reward():
     return scan_box_click_text("reward", REWARD_REGION, 0, 0)
@@ -322,8 +318,8 @@ def click_reward_prior():
 def reset_view():
     screen_w, screen_h = pyautogui.size()
     #center bottom coordinates
-    x_ratio = 0.4703
-    y_ratio = 0.6333
+    x_ratio = 0.1094
+    y_ratio = 0.8759
 
     x = x_ratio * screen_w
     y = y_ratio * screen_h
@@ -370,7 +366,7 @@ def process_fight(boss_fight=False):
             
         # Scen2: pick reward choice
         elif check_reward():
-            time.sleep(3)  # wait for cards to load
+            time.sleep(3.5)  # wait for cards to load
             
             picked_class = click_reward_prior()  # now returns class name or None
 
@@ -453,7 +449,7 @@ def process_fight(boss_fight=False):
                 screen_w, screen_h = pyautogui.size()
                 #center bottom coordinates
                 x_ratio = 0.4703
-                y_ratio = 0.6333
+                y_ratio = 0.7333
 
                 x = x_ratio * screen_w
                 y = y_ratio * screen_h
