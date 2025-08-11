@@ -609,6 +609,7 @@ if __name__ == "__main__":
             print("processing until shop!!!")
             process_start_to_shop()  # Run through Mirror Dungeon normally until shop
             if shop_flag:
+                print("User wants to stop at shop")
                 break
             time.sleep(2)
 
