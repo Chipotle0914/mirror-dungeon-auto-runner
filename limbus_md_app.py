@@ -595,6 +595,9 @@ def process_shop_boss_packs():
     return False
 
 if __name__ == "__main__":
+    #whether to stop at first shop
+    shop_flag = int(input("Enter 1 to stop after entering shop, 0 to continue: "))
+
     while True:
         if scan_box_click_text("enter", ENTER_REGION, 0, 0):
             print("processing boss until next level!!!")  
@@ -605,6 +608,8 @@ if __name__ == "__main__":
         else:
             print("processing until shop!!!")
             process_start_to_shop()  # Run through Mirror Dungeon normally until shop
+            if shop_flag:
+                break
             time.sleep(2)
 
     
