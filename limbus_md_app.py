@@ -318,8 +318,8 @@ def click_reward_prior():
 def reset_view():
     screen_w, screen_h = pyautogui.size()
     #center bottom coordinates
-    x_ratio = 0.1094
-    y_ratio = 0.8759
+    x_ratio = 0.4703
+    y_ratio = 0.6333
 
     x = x_ratio * screen_w
     y = y_ratio * screen_h
@@ -448,8 +448,8 @@ def process_fight(boss_fight=False):
             if check_p_enter():
                 screen_w, screen_h = pyautogui.size()
                 #center bottom coordinates
-                x_ratio = 0.4703
-                y_ratio = 0.7333
+                x_ratio = 0.1094
+                y_ratio = 0.8759
 
                 x = x_ratio * screen_w
                 y = y_ratio * screen_h
