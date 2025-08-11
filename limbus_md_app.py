@@ -47,7 +47,9 @@ ENDING_SCREEN_TOP_LEFT_REGION = (0.0005, 0.0907, 0.3203, 0.2815)
 ENDING_SCREEN_VICTORY_REGION = (0.7438, 0.0620, 0.9547, 0.2583)
 ENDING_SCREEN_CONFIRM = (0.6839, 0.6769, 0.9635, 0.9500)
 BOSS_X_OFFSET = 0.2005
+REFRESH_REGION = (0.6786, 0.0000, 0.9885, 0.1481)
 DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
+
 #move cursor to targeted class and click
 def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
@@ -275,6 +277,9 @@ def click_shop_confirm():
 
 def check_to_battle():
     return scan_box_click_text("battle", TO_BATTLE_REGION, 0, 0)
+
+def click_refresh():
+    return scan_box_click_text("refresh", REFRESH_REGION)
 
 def click_boss():
     screen_w, screen_h= pyautogui.size()
@@ -577,7 +582,14 @@ def process_shop_boss_packs():
     if process_fight(boss_fight = True):
         return True
 
-   
+    #wait for packs to load
+    time.slee(2)
+   #if all packs are bad scenario
+    count = 0
+    while count < 3 or ((not yolo_detect_click(GOOD_PACK, 0)) and yolo_detect_click(BAD_PACK, 0)):
+        click_refresh()
+        count += 1
+
     yolo_detect_click(GOOD_PACK, drag_down = True)
     time.sleep(3)
     return False
