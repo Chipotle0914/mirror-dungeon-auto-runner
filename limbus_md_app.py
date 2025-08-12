@@ -51,7 +51,7 @@ REFRESH_REGION = (0.6786, 0.0000, 0.9885, 0.1481)
 DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
 
 #move cursor to targeted class and click
-def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False):
+def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False, move_to: bool = True):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
     
     # Capture screenshot
@@ -116,7 +116,8 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
 
     print(f"✅ Found '{target_class}' at ({center_x}, {center_y})")
 
-    pyautogui.moveTo(center_x, center_y, duration=0.2)
+    if move_to:
+        pyautogui.moveTo(center_x, center_y, duration=0.2)
     
     #drag down
     if drag_down:
@@ -356,10 +357,10 @@ def process_fight(boss_fight=False):
                 continue
         # 🛑 Exit for boss fight: check theme packs
         # some how it was possible to find a pack during a fight
-        if boss_fight and (yolo_detect_click(GOOD_PACK, 0) or yolo_detect_click(BAD_PACK, 0)):
+        if boss_fight and (yolo_detect_click(GOOD_PACK, 0, move_to = False) or yolo_detect_click(BAD_PACK, 0, move_to = False)):
             #do a double check
-            time.sleep(1)
-            if check_p_enter():
+            time.sleep(1.5)
+            if not (yolo_detect_click(GOOD_PACK, 0, move_to = False) or yolo_detect_click(BAD_PACK, 0, move_to = False)):
                 continue
             print("🛑 Boss fight ended — good or bad pack found.")
             break
@@ -589,10 +590,22 @@ def process_shop_boss_packs():
     time.sleep(2)
    #if all packs are bad scenario
     count = 0
-    while count < 3 and ((not yolo_detect_click(GOOD_PACK, 0)) and yolo_detect_click(BAD_PACK, 0)):
+    while count < 3 and ((not yolo_detect_click(GOOD_PACK, 0, move_to = False)) and yolo_detect_click(BAD_PACK, 0, move_to = False)):
         click_refresh()
         time.sleep(3)
         count += 1
+
+    #moving away start
+    screen_w, screen_h = pyautogui.size()
+    #center bottom coordinates
+    x_ratio = 0.1094
+    y_ratio = 0.8759
+
+    x = x_ratio * screen_w
+    y = y_ratio * screen_h
+
+    pyautogui.moveTo(x, y, duration=0.2)
+    #moving away end
 
     yolo_detect_click(GOOD_PACK, drag_down = True)
     time.sleep(3)
