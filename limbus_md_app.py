@@ -9,7 +9,7 @@ import keyboard
 import sys
 
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train9/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train10/weights/best.pt')
 model.conf = 0.75 
 
 # Initialize EasyOCR reader once
@@ -397,6 +397,9 @@ def process_fight(boss_fight=False):
         elif yolo_detect_click(ACQUIRE_EGO):
             time.sleep(0.8)  # make sure ego is selected
             if not click_select():
+                pyautogui.mouseDown(button='left')
+                time.sleep(0.001)
+                pyautogui.mouseUp(button='left')
                 continue
 
             time.sleep(1.5)  # wait for confirm button to show
@@ -595,6 +598,10 @@ def process_shop_boss_packs():
     time.sleep(3)
     return False
 
+#def train_testing():
+
+
+
 if __name__ == "__main__":
     #whether to stop at first shop
     shop_flag = int(input("Enter 1 to stop after entering shop, 0 to continue: "))
@@ -614,7 +621,8 @@ if __name__ == "__main__":
                 break
             time.sleep(2)
 
-    
+
+
 
        
         
