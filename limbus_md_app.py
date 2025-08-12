@@ -7,7 +7,7 @@ import time
 import easyocr
 import keyboard 
 import sys
-
+#yepeeee
 # Load YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train10/weights/best.pt')
 model.conf = 0.75 
