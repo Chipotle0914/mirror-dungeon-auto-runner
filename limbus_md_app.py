@@ -330,9 +330,17 @@ def reset_view():
         pyautogui.scroll(-50)
         time.sleep(0.2)
 
-time.sleep(2)
-#reset_view()
-#yolo_detect_click(FIGHT)
+def move_away():
+    screen_w, screen_h = pyautogui.size()
+    #center bottom coordinates
+    x_ratio = 0.1094
+    y_ratio = 0.8759
+
+    x = x_ratio * screen_w
+    y = y_ratio * screen_h
+
+    pyautogui.moveTo(x, y, duration=0.2)
+
 
 
 def process_fight(boss_fight=False):
@@ -382,10 +390,12 @@ def process_fight(boss_fight=False):
                     if check_confirm():
                         click_confirm()
                         time.sleep(3)
+                        move_away()
                         continue
                 else:
                     click_confirm()
                     time.sleep(3)
+                    move_away()
                     continue
 
             # Fallback confirm if no reward was picked
@@ -406,7 +416,7 @@ def process_fight(boss_fight=False):
             time.sleep(1.5)  # wait for confirm button to show
             if not click_confirm():
                 continue
-
+            move_away()
             time.sleep(3)
             continue
         #Scen4: accept ego gift by pressing confirm(or enter)
@@ -420,6 +430,7 @@ def process_fight(boss_fight=False):
                 else:
                     click_confirm()
                     time.sleep(1)
+                    move_away()
                     continue
 
         #Scen5: deal with skill check boss
@@ -595,17 +606,7 @@ def process_shop_boss_packs():
         time.sleep(3)
         count += 1
 
-    #moving away start
-    screen_w, screen_h = pyautogui.size()
-    #center bottom coordinates
-    x_ratio = 0.1094
-    y_ratio = 0.8759
-
-    x = x_ratio * screen_w
-    y = y_ratio * screen_h
-
-    pyautogui.moveTo(x, y, duration=0.2)
-    #moving away end
+    move_away()
 
     yolo_detect_click(GOOD_PACK, drag_down = True)
     time.sleep(3)
