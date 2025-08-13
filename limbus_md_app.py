@@ -408,13 +408,26 @@ def process_fight(boss_fight=False):
         elif yolo_detect_click(ACQUIRE_EGO):
             time.sleep(0.8)  # make sure ego is selected
             if not click_select():
-                pyautogui.mouseDown(button='left')
-                time.sleep(0.001)
-                pyautogui.mouseUp(button='left')
                 continue
 
             time.sleep(1.5)  # wait for confirm button to show
             if not click_confirm():
+                #confirm didn't show after the click
+                pyautogui.mouseDown(button='left')
+                time.sleep(0.001)
+                pyautogui.mouseUp(button='left') 
+                if check_confirm():
+                    click_confirm():
+                    print("Second Select click: Success✅")
+                    continue
+                print("Second Select click: failed ❌")
+                print("Third Select click: attempting")
+                #try moving away then come back to click
+                move_away()
+                scan_box_click_text("select", SELECT_REGION, click_flag = 0, moveTo_flag = 1)
+                pyautogui.mouseDown(button='left')
+                time.sleep(0.001)
+                pyautogui.mouseUp(button='left')
                 continue
             move_away()
             time.sleep(3)
