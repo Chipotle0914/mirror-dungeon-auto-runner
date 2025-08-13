@@ -417,7 +417,7 @@ def process_fight(boss_fight=False):
                 time.sleep(0.001)
                 pyautogui.mouseUp(button='left') 
                 if check_confirm():
-                    click_confirm():
+                    click_confirm()
                     print("Second Select click: Success✅")
                     continue
                 print("Second Select click: failed ❌")
