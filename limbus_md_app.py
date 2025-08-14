@@ -134,6 +134,44 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
 
     return True
 
+#helper functinon for scan_box_click_text
+def word_centers_x(text_line: str, words: list, box_left: float, box_width: float) -> list:
+    """
+    Map each token's center character position in text_line to an x coord inside the bbox.
+    Robust to uneven token lengths and punctuation (e.g., '[', 'low]').
+    """
+    centers = []
+    cursor = 0
+    L = max(1, len(text_line))  # avoid div-by-zero
+
+    for i, w in enumerate(words):
+        # Find this token at/after the current cursor
+        start = text_line.find(w, cursor)
+        if start == -1:
+            # Fallback: try from beginning (OCR spacing/merging can shift)
+            start = text_line.find(w)
+            if start == -1:
+                # Last resort: equal-slot approximation for this position
+                segments = max(1, len(words))
+                frac = (i + 0.5) / segments
+                centers.append(box_left + box_width * frac)
+                continue
+
+        end = start + len(w)
+        center_char = (start + end) / 2.0
+        frac = center_char / L  # 0..1 across the full text line
+        x = box_left + box_width * frac
+        centers.append(x)
+
+        # Advance cursor to just after this token
+        cursor = end
+
+    return centers
+
+
+
+
+# scan an area of screen with easyocr to find specific text
 # scan an area of screen with easyocr to find specific text
 def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0):
     x1_ratio, y1_ratio, x2_ratio, y2_ratio = region
@@ -145,7 +183,7 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0)
     x2 = int(screen_w * x2_ratio)
     y2 = int(screen_h * y2_ratio)
 
-    #Convert offsets as well
+    # Convert vertical offset (fraction of screen height) to pixels
     y_offset = y_offset * screen_h
 
     print(f"📦 Scanning box region: ({x1}, {y1}) to ({x2}, {y2})")
@@ -168,35 +206,44 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0)
             box_width = box_right - box_left
             box_height_center = (min(ys) + max(ys)) / 2
 
+            # Tokenize OCR line and target
             words = text_lower.split()
             print("all detected words:", words)
-
             target_arr = target_lower.split()
-            # Find first word that CONTAINS the target
-            idx = -1
-            for i, word in enumerate(words):
-                print("target_lower: ", target_arr, " word: ", word)
-                if len(target_arr) > 1:
 
-                    if target_arr[1] in word:
-                        idx = i
-                        print("idx: ", idx)
+            # ---- Determine idx (which token to click) ----
+            idx = None
+            if len(target_arr) > 1:
+                # Two-word contiguous match: [first, second]
+                first, second = target_arr[0], target_arr[1]
+                for i in range(len(words) - 1):
+                    if first in words[i] and second in words[i + 1]:
+                        idx = i  # click starting word of the pair
                         break
-                else:
-                    if target_arr[0] in word:
-                        idx = i
-                        print("idx: ", idx)
-                        break
-
-            if idx in [0, 1] and len(words) > 1:
-                click_x = box_left + box_width * 0.25
-                print(f"🎯 Target '{target}' is in the first two words → clicking 1/4 from left.")
-            elif idx in [len(words) - 2, len(words) - 1] and len(words) > 1:
-                click_x = box_left + box_width * 0.85
-                print(f"🎯 Target '{target}' is in the last two words → clicking 3/4 from left.")
             else:
-                click_x = (box_left + box_right) / 2
-                print(f"🎯 Target '{target}' in middle or unknown → clicking center.")
+                # Single word: first token that contains it
+                single = target_arr[0]
+                for i, w in enumerate(words):
+                    if single in w:
+                        idx = i
+                        break
+
+            # If we didn't find the sequence/word in this OCR region, check next result
+            if idx is None:
+                continue
+
+            # Clamp idx just in case
+            idx = max(0, min(idx, len(words) - 1))
+            print(f"🎯 Matched token index: {idx} (token='{words[idx]}')")
+
+            # ---- Map token centers to x coords and choose click_x ----
+            centers_x = word_centers_x(text_lower, words, box_left, box_width)
+            if idx < len(centers_x):
+                click_x = centers_x[idx]
+            else:
+                # Fallback: equal-slot center
+                frac = (idx + 0.5) / max(1, len(words))
+                click_x = box_left + box_width * frac
 
             click_y = box_height_center
 
@@ -204,10 +251,10 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0)
             click_x += x1
             click_y += y1
 
-            #add y_offset
+            # Apply vertical offset
             click_y += y_offset
 
-            print(f"✅ Found '{text}' at ({click_x:.0f}, {click_y:.0f}) with confidence {conf:.2f}")
+            print(f"✅ Found '{text}' → clicking at ({click_x:.0f}, {click_y:.0f}) | conf={conf:.2f}")
 
             if moveTo_flag:
                 pyautogui.moveTo(click_x, click_y, duration=0.2)
@@ -220,6 +267,7 @@ def scan_box_click_text(target, region, moveTo_flag=1, click_flag=1, y_offset=0)
 
     print(f"❌ '{target}' not found in region.")
     return False
+
 
 #clicking functions
 def click_enter():
@@ -451,7 +499,7 @@ def process_fight(boss_fight=False):
             #process skill check without choice A, B
             if not click_skip_5_times():
                 time.sleep(1)
-                click_skip_5_times
+                click_skip_5_times()
             #do skil check
             if check_skill_check():
                 click_best_skill_check()
@@ -463,7 +511,7 @@ def process_fight(boss_fight=False):
                 sys.exit("During battle, can't find commence")
             if not click_skip_5_times():
                 time.sleep(1)
-                click_skip_5_times
+                click_skip_5_times()
             #click continue
             if click_continue():
                 time.sleep(1.5)
