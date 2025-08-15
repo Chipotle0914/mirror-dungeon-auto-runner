@@ -304,7 +304,7 @@ def check_ending():
         return False
 
 def check_skip():
-    return scan_box_click_text("skip", SKIP_REGION, 1, 0)
+    return scan_box_click_text("skip", SKIP_REGION, 0, 0)
 
 def click_skip_5_times():
     return scan_box_click_text("skip", SKIP_REGION, 1, 5)
