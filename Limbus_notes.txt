@@ -107,4 +107,4 @@ stages:
 
 
 
-DEBUG COMMMAND: cmd /c "chcp 65001 >nul & python -X utf8 -u .\limbus_md_app.py > debug_log.txt 2>&1"   
+DEBUG COMMMAND: cmd /c "chcp 65001 >nul & echo 0 | python -X utf8 -u .\limbus_md_app.py > debug_log.txt 2>&1" 
