@@ -78,7 +78,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
 
     if target_class in [GOOD_PACK, BAD_PACK, REWARD_STAR, REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        debug_img_path = f"debug_{timestamp}.png"
+        debug_img_path = f"debug_{target_class}_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
         print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
