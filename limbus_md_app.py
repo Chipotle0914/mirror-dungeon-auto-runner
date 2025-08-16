@@ -391,13 +391,16 @@ def move_away():
 
 
 
-def process_fight(boss_fight=False):
+def process_fight(boss_fight=False, skip_to_battle=False):
     # start the battle
-    while True:
-        if click_to_battle() or scan_box_click_text("clear", TO_BATTLE_BACKUP_REGION, 1, 0, 0.1537):
-            pyautogui.click()
-            time.sleep(0.3)
-            break
+    
+    #skip battle if it misread fight stage as question
+    if not skip_to_battle:
+        while True:
+            if click_to_battle() or scan_box_click_text("clear", TO_BATTLE_BACKUP_REGION, 1, 0, 0.1537):
+                pyautogui.click()
+                time.sleep(0.3)
+                break
     
     #time sleep here so it stop accidetnally misread themepacks and ego gifts
     time.sleep(1.5)
@@ -599,11 +602,11 @@ def process_question():
             click_best_skill_check()
             time.sleep(1)
             continue
-
-        #if accidentally misread or special encounters(pressing choice A becomes a fight)
-        elif check_p_enter() or check_to_battle():
+        #misread any fight stages as question or if choice A/B leads to battle
+        elif check_p_enter(skip_to_battle=True) or check_to_battle():
             process_fight()
             break
+        
         elif check_leave():
             break
         else:
