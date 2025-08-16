@@ -544,6 +544,8 @@ def process_fight(boss_fight=False, skip_to_battle=False):
                 continue
 
 def process_question():
+    #always start from clicking skip
+    click_skip_5_times()
     #enter qustion
     while True:
         #Scen1: go back to train      
@@ -627,7 +629,7 @@ def process_start_to_shop():
         elif yolo_detect_click(QUESTION):
             time.sleep(1)
             click_enter()
-            time.sleep(0.8)
+            time.sleep(1.5)
             process_question()
             reset_view()
             time.sleep(0.5)
