@@ -604,9 +604,13 @@ def process_question():
             click_best_skill_check()
             time.sleep(1)
             continue
-        #misread any fight stages as question or if choice A/B leads to battle
-        elif check_p_enter(skip_to_battle=True) or check_to_battle():
+        #if choice A/B leads to battle
+        elif check_to_battle():
             process_fight()
+            break
+        #misread any fight stages as question
+        elif check_p_enter():
+            process_fight(skip_to_battle=True)
             break
         
         elif check_leave():
