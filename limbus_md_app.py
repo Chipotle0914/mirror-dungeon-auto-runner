@@ -9,8 +9,8 @@ import keyboard
 import sys
 #yepeeee
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='yolov5/runs/train/mirror_dungeon_train10/weights/best.pt')
-model.conf = 0.75 
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train11/weights/best.pt')
+model.conf = 0.8 
 
 # Initialize EasyOCR reader once
 reader = easyocr.Reader(['en'], gpu=True)
@@ -133,6 +133,16 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
         print(f"🖱️ Clicked on '{target_class}'")
 
     return True
+
+
+def save_shop_screenshot(prefix="boss_check"):
+    """Grab a full-screen screenshot and save it with a timestamped filename."""
+    timestamp = time.strftime("%Y%m%d-%H%M%S")
+    path = f"{prefix}_{timestamp}.png"
+    img = ImageGrab.grab()
+    img.save(path)
+    print(f"🖼️ Saved shop screenshot to {path}")
+    return path
 
 #helper functinon for scan_box_click_text
 def word_centers_x(text_line: str, words: list, box_left: float, box_width: float) -> list:
@@ -306,8 +316,12 @@ def check_ending():
 def check_skip():
     return scan_box_click_text("skip", SKIP_REGION, 0, 0)
 
-def click_skip_5_times():
-    return scan_box_click_text("skip", SKIP_REGION, 1, 5)
+def click_skip_5_times(wait=False):
+    res = scan_box_click_text("skip", SKIP_REGION, 1, 5)
+    if wait:
+        save_shop_screenshot()
+        time.sleep(1)
+    return res
 
 def click_continue():
     return scan_box_click_text("continue", COMMENCE_CONTINUE_PROCEED_REGION)
@@ -500,9 +514,9 @@ def process_fight(boss_fight=False, skip_to_battle=False):
         #Scen5: deal with skill check boss
         elif check_skip():
             #process skill check without choice A, B
-            if not click_skip_5_times():
+            if not click_skip_5_times(wait=True):
                 time.sleep(1)
-                click_skip_5_times()
+                click_skip_5_times(wait=True)
             #do skil check
             if check_skill_check():
                 click_best_skill_check()

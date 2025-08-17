@@ -108,3 +108,29 @@ stages:
 
 
 DEBUG COMMMAND: cmd /c "chcp 65001 >nul & echo 0 | python -X utf8 -u .\limbus_md_app.py > debug_log.txt 2>&1" 
+
+
+
+
+rewrite files:
+$i = 56
+Get-ChildItem -Filter "*.png" | Sort-Object Name | ForEach-Object {
+    $newName = "Screenshot($i).png"
+    Rename-Item $_.FullName $newName
+    $i++
+}
+
+
+
+burn
+bleed
+rupture
+tremor
+sinking
+poise
+charge
+slash
+blunt
+pierce
+none
+disabled
