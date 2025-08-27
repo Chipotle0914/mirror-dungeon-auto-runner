@@ -9,7 +9,7 @@ import keyboard
 import sys
 #yepeeee
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train11/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train_fast/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
@@ -424,6 +424,7 @@ def process_fight(boss_fight=False, skip_to_battle=False):
         # 🛑 Exit for regular fights: check for train
         if not boss_fight and yolo_detect_click(TRAIN, 0):
             time.sleep(1)
+            move_away()
             if yolo_detect_click(TRAIN, 0):
                 break
             else:
@@ -565,6 +566,7 @@ def process_question():
         #Scen1: go back to train      
         if yolo_detect_click(TRAIN, 0):
             time.sleep(1.5)
+            move_away()
             if yolo_detect_click(TRAIN, 0):
                 break
             else:
