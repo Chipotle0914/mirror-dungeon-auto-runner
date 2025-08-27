@@ -422,9 +422,8 @@ def process_fight(boss_fight=False, skip_to_battle=False):
     while True:
             
         # 🛑 Exit for regular fights: check for train
-        if not boss_fight and yolo_detect_click(TRAIN, 0):
+        if not boss_fight and yolo_detect_click(TRAIN, 0, click_num=0, move_to=False):
             time.sleep(1)
-            move_away()
             if yolo_detect_click(TRAIN, 0):
                 break
             else:
@@ -564,9 +563,8 @@ def process_question():
     #enter qustion
     while True:
         #Scen1: go back to train      
-        if yolo_detect_click(TRAIN, 0):
+        if yolo_detect_click(TRAIN, 0, click_num=0, move_to=False):
             time.sleep(1.5)
-            move_away()
             if yolo_detect_click(TRAIN, 0):
                 break
             else:
