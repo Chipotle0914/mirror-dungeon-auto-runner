@@ -53,86 +53,95 @@ DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD
 #move cursor to targeted class and click
 def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False, move_to: bool = True):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
-    
+
     # Capture screenshot
     screenshot = np.array(ImageGrab.grab())
+    # NOTE: ImageGrab returns RGB; YOLOv5 accepts RGB np arrays.
+    # If your model expects RGB, keep as-is. If you feed BGR, flip channels.
     screenshot_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
 
     # Run detection
     results = model(screenshot_rgb)
     detections = results.pandas().xyxy[0]
 
-      # Filter for target class and confidence threshold
-    match = detections[
+    # Filter candidates by class + confidence
+    matches = detections[
         (detections['name'] == target_class) &
         (detections['confidence'] >= model.conf)
     ]
 
-    if match.empty:
+    if matches.empty:
         print(f"❌ '{target_class}' not found.")
         return False
 
-    ####DEBUG
-    match = match.sort_values(by='confidence', ascending=False)
-    det_conf = match.iloc[0]['confidence']
+    # Get TRAIN (highest confidence) to enforce right-of-TRAIN rule
+    train_match = detections[
+        (detections['name'] == TRAIN) &
+        (detections['confidence'] >= model.conf)
+    ].sort_values(by='confidence', ascending=False)
 
-    if target_class in [GOOD_PACK, BAD_PACK, REWARD_STAR, REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]:
+    if train_match.empty:
+        print(f"⚠️ TRAIN not detected; cannot verify '{target_class}' is right of TRAIN → skipping.")
+        return False
+
+    tx1, _, tx2, _ = train_match.iloc[0][['xmin', 'ymin', 'xmax', 'ymax']]
+    train_center_x = int((tx1 + tx2) / 2)
+
+    # Sort candidates by confidence (desc)
+    matches = matches.sort_values(by='confidence', ascending=False)
+
+    # If top_most requested, we’ll later reselect the smallest ymin among valid ones
+    valid = []
+    for _, row in matches.iterrows():
+        x1, y1, x2, y2 = row[['xmin', 'ymin', 'xmax', 'ymax']]
+        cx = int((x1 + x2) / 2)
+        if cx > train_center_x:  # must be strictly to the RIGHT of TRAIN
+            valid.append(row)
+
+    if not valid:
+        print(f"❌ '{target_class}' found, but none to the RIGHT of TRAIN (TRAIN cx={train_center_x}).")
+        return False
+
+    # Choose candidate
+    if top_most:
+        print("↕️ Top-most mode enabled")
+        chosen = sorted(valid, key=lambda r: r['ymin'])[0]
+    else:
+        chosen = valid[0]
+
+    # Final center + debug
+    x1, y1, x2, y2 = chosen[['xmin', 'ymin', 'xmax', 'ymax']]
+    center_x = int((x1 + x2) / 2)
+    center_y = int((y1 + y2) / 2)
+    det_conf = float(chosen['confidence'])
+
+    # Optional debug image for certain classes
+    if target_class in [GOOD_PACK, BAD_PACK, REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{target_class}_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
         print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
-    ####DEBUG
-    # Get target box
-    if top_most:
-        match = match.sort_values(by='ymin').iloc[0]
-        print("↕️ Top-most mode enabled")
-    else:
-        match = match.iloc[0]
 
-    # Get first matching box
-    x1, y1, x2, y2 = match[['xmin', 'ymin', 'xmax', 'ymax']]
-    center_x = int((x1 + x2) / 2)
-    center_y = int((y1 + y2) / 2)
-
-    # 🔍 SHOP-specific condition: check if left of TRAIN
-    if target_class == SHOP:
-        train_match = detections[
-            (detections['name'] == TRAIN) & 
-            (detections['confidence'] >= model.conf)
-        ]
-        if train_match.empty:
-            print("⚠️ SHOP found but TRAIN not detected — skipping SHOP.")
-            return False
-        train = train_match.sort_values(by='confidence', ascending=False).iloc[0]
-        train_x1, train_x2 = train[['xmin', 'xmax']]
-        train_center_x = int((train_x1 + train_x2) / 2)
-
-        if center_x < train_center_x:
-            print(f"❌ Ignored SHOP — not left of TRAIN (SHOP X: {center_x}, TRAIN X: {train_center_x})")
-            return False
-        else:
-            print(f"✅ SHOP is left of TRAIN → proceeding (SHOP X: {center_x}, TRAIN X: {train_center_x})")
-
-    print(f"✅ Found '{target_class}' at ({center_x}, {center_y})")
+    print(f"🧭 Right-of-TRAIN check: {target_class} cx={center_x}, TRAIN cx={train_center_x} → OK (right)")
+    print(f"✅ Found '{target_class}' at ({center_x}, {center_y}) | conf={det_conf:.2f}")
 
     if move_to:
         pyautogui.moveTo(center_x, center_y, duration=0.2)
-    
-    #drag down
+
     if drag_down:
         pyautogui.mouseDown(center_x, center_y)
         pyautogui.moveTo(center_x, center_y + 400, duration=0.2)
         pyautogui.mouseUp()
         print("Successfully Selected Theme pack!")
     else:
-    #click for click_num
         for _ in range(click_num):
             pyautogui.click()
             time.sleep(0.3)
         print(f"🖱️ Clicked on '{target_class}'")
 
     return True
+
 
 
 def save_shop_screenshot(prefix="boss_check"):
