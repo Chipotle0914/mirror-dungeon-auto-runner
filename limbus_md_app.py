@@ -9,7 +9,7 @@ import keyboard
 import sys
 #yepeeee
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train_fast/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train12/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
@@ -37,7 +37,7 @@ TO_BATTLE_BACKUP_REGION = (0.7786, 0.5694, 0.9938, 0.9528)
 CONFIRM_REGION = (0.0854, 0.5741, 0.9547, 0.9194)
 SELECT_REGION = (0.7646, 0.7972, 0.9943, 0.9889)
 REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
-P_ENTER_REGION = (0.6245, 0.6491, 0.9307, 0.8935)
+P_ENTER_REGION = (0.0589, 0.6000, 0.9854, 0.9037)
 SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
 COMMENCE_CONTINUE_PROCEED_REGION = (0.7438, 0.7713, 0.9927, 0.9667)
 LEAVE_REGION = (0.7536, 0.7917, 0.9880, 0.9630)
