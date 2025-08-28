@@ -37,7 +37,7 @@ TO_BATTLE_BACKUP_REGION = (0.7786, 0.5694, 0.9938, 0.9528)
 CONFIRM_REGION = (0.0854, 0.5741, 0.9547, 0.9194)
 SELECT_REGION = (0.7646, 0.7972, 0.9943, 0.9889)
 REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
-P_ENTER_REGION = (0.0589, 0.6000, 0.9854, 0.9037)
+P_ENTER_REGION = (0.6245, 0.6491, 0.9307, 0.8935)
 SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
 COMMENCE_CONTINUE_PROCEED_REGION = (0.7438, 0.7713, 0.9927, 0.9667)
 LEAVE_REGION = (0.7536, 0.7917, 0.9880, 0.9630)
@@ -51,71 +51,74 @@ REFRESH_REGION = (0.6786, 0.0000, 0.9885, 0.1481)
 DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
 
 #move cursor to targeted class and click
+# Which classes must be to the RIGHT of TRAIN
+REQUIRE_RIGHT_OF_TRAIN = {FIGHT, QUESTION, SHOP}
+
 def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False, move_to: bool = True):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
 
-    # Capture screenshot
+    # Capture screenshot (ImageGrab returns RGB)
     screenshot = np.array(ImageGrab.grab())
-    # NOTE: ImageGrab returns RGB; YOLOv5 accepts RGB np arrays.
-    # If your model expects RGB, keep as-is. If you feed BGR, flip channels.
-    screenshot_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)
+    screenshot_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)  # keep if your pipeline expects RGB
 
     # Run detection
     results = model(screenshot_rgb)
     detections = results.pandas().xyxy[0]
 
-    # Filter candidates by class + confidence
+    # Filter target candidates by class + confidence
     matches = detections[
         (detections['name'] == target_class) &
         (detections['confidence'] >= model.conf)
     ]
-
     if matches.empty:
         print(f"❌ '{target_class}' not found.")
         return False
 
-    # Get TRAIN (highest confidence) to enforce right-of-TRAIN rule
-    train_match = detections[
-        (detections['name'] == TRAIN) &
-        (detections['confidence'] >= model.conf)
-    ].sort_values(by='confidence', ascending=False)
-
-    if train_match.empty:
-        print(f"⚠️ TRAIN not detected; cannot verify '{target_class}' is right of TRAIN → skipping.")
-        return False
-
-    tx1, _, tx2, _ = train_match.iloc[0][['xmin', 'ymin', 'xmax', 'ymax']]
-    train_center_x = int((tx1 + tx2) / 2)
-
-    # Sort candidates by confidence (desc)
+    # Sort by confidence
     matches = matches.sort_values(by='confidence', ascending=False)
 
-    # If top_most requested, we’ll later reselect the smallest ymin among valid ones
+    # --- Right-of-TRAIN rule only for selected classes ---
     valid = []
-    for _, row in matches.iterrows():
-        x1, y1, x2, y2 = row[['xmin', 'ymin', 'xmax', 'ymax']]
-        cx = int((x1 + x2) / 2)
-        if cx > train_center_x:  # must be strictly to the RIGHT of TRAIN
-            valid.append(row)
+    if target_class in REQUIRE_RIGHT_OF_TRAIN:
+        train_match = detections[
+            (detections['name'] == TRAIN) &
+            (detections['confidence'] >= model.conf)
+        ].sort_values(by='confidence', ascending=False)
 
-    if not valid:
-        print(f"❌ '{target_class}' found, but none to the RIGHT of TRAIN (TRAIN cx={train_center_x}).")
-        return False
+        if train_match.empty:
+            print(f"⚠️ TRAIN not detected; cannot verify '{target_class}' is right of TRAIN → skipping.")
+            return False
+
+        tx1, _, tx2, _ = train_match.iloc[0][['xmin', 'ymin', 'xmax', 'ymax']]
+        train_center_x = int((tx1 + tx2) / 2)
+
+        for _, row in matches.iterrows():
+            x1, y1, x2, y2 = row[['xmin', 'ymin', 'xmax', 'ymax']]
+            cx = int((x1 + x2) / 2)
+            if cx > train_center_x:  # must be strictly right of TRAIN
+                valid.append(row)
+
+        if not valid:
+            print(f"❌ '{target_class}' found, but none to the RIGHT of TRAIN (TRAIN cx={train_center_x}).")
+            return False
+    else:
+        # No right-of-TRAIN constraint for other classes
+        valid = list(matches.itertuples(index=False))
 
     # Choose candidate
     if top_most:
         print("↕️ Top-most mode enabled")
-        chosen = sorted(valid, key=lambda r: r['ymin'])[0]
+        # pick smallest ymin among valid
+        chosen = min(valid, key=lambda r: getattr(r, 'ymin', r.ymin))
     else:
         chosen = valid[0]
 
-    # Final center + debug
-    x1, y1, x2, y2 = chosen[['xmin', 'ymin', 'xmax', 'ymax']]
+    # Centers + confidence
+    x1, y1, x2, y2 = (chosen.xmin, chosen.ymin, chosen.xmax, chosen.ymax)
     center_x = int((x1 + x2) / 2)
     center_y = int((y1 + y2) / 2)
-    det_conf = float(chosen['confidence'])
+    det_conf = float(chosen.confidence)
 
-    # Optional debug image for certain classes
     if target_class in [GOOD_PACK, BAD_PACK, REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{target_class}_{timestamp}.png"
@@ -123,7 +126,9 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
         print(f"🖼️ Saved debug screenshot to {debug_img_path}")
         print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
 
-    print(f"🧭 Right-of-TRAIN check: {target_class} cx={center_x}, TRAIN cx={train_center_x} → OK (right)")
+    if target_class in REQUIRE_RIGHT_OF_TRAIN:
+        print(f"🧭 Right-of-TRAIN check OK: {target_class} cx={center_x}")
+
     print(f"✅ Found '{target_class}' at ({center_x}, {center_y}) | conf={det_conf:.2f}")
 
     if move_to:
