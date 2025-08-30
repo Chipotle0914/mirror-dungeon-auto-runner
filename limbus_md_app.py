@@ -9,7 +9,7 @@ import keyboard
 import sys
 #yepeeee
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train12/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train13/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
@@ -37,7 +37,7 @@ TO_BATTLE_BACKUP_REGION = (0.7786, 0.5694, 0.9938, 0.9528)
 CONFIRM_REGION = (0.0854, 0.5741, 0.9547, 0.9194)
 SELECT_REGION = (0.7646, 0.7972, 0.9943, 0.9889)
 REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
-P_ENTER_REGION = (0.6245, 0.6491, 0.9307, 0.8935)
+P_ENTER_REGION = (0.0516, 0.6028, 0.9895, 0.9375)
 SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
 COMMENCE_CONTINUE_PROCEED_REGION = (0.7438, 0.7713, 0.9927, 0.9667)
 LEAVE_REGION = (0.7536, 0.7917, 0.9880, 0.9630)
@@ -439,6 +439,9 @@ def process_fight(boss_fight=False, skip_to_battle=False):
         if not boss_fight and yolo_detect_click(TRAIN, 0, move_to=False):
             time.sleep(1)
             if yolo_detect_click(TRAIN, 0):
+                #some reason it's able to spot train within nagal und hammar's fight statge
+                if check_p_enter():
+                    continue
                 break
             else:
                 continue
