@@ -107,9 +107,9 @@ stages:
 
 
 
-DEBUG COMMMAND: cmd /c "chcp 65001 >nul & echo 0 | python -X utf8 -u .\limbus_md_app.py > debug_log.txt 2>&1" 
+DEBUG COMMMAND: cmd /c "chcp 65001 >nul & (echo 0 & echo 3) | python -X utf8 -u .\limbus_md_app.py > debug_log.txt 2>&1"
 
-
+second echo controls how many times it runs (current example run 3 times)
 
 
 rewrite files:
@@ -134,3 +134,15 @@ blunt
 pierce
 none
 disabled
+
+python yolov5/train.py --img 896 --batch 16 --epochs 70 --data dataset.yaml --weights yolov5s.pt --cache --workers 4 --device 0 --name mirror_dungeon_train15
+python yolov5/train.py --img 640 --batch 32 --epochs 50 --data dataset.yaml --weights yolov5s.pt --cache --workers 4 --device 0 --name mirror_dungeon_train
+python yolov5/detect.py --weights limbus_train_model/mirror_dungeon_train_fast/weights/best.pt --img 640 --source test_image --conf 0.8 --name high_config
+
+.\yolov5-env\Scripts\activate
+
+
+
+
+
+python yolov5/train.py --img 640 --batch 40 --epochs 120 --data dataset.yaml --weights yolov5s.pt --device 0 --workers 4 --cache ram --patience 20 --name mirror_dungeon_train_fast
