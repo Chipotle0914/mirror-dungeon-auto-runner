@@ -9,7 +9,7 @@ import keyboard
 import sys
 #yepeeee
 # Load YOLOv5 model
-model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train13/weights/best.pt')
+model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train16/weights/best.pt')
 model.conf = 0.8 
 
 # Initialize EasyOCR reader once
@@ -31,11 +31,11 @@ A_CHOICES = "A_choices"
 B_CHOICES = "B_choices"
 GOOD_PACK = "good_pack"
 BAD_PACK = "bad_pack"
-ENTER_REGION = (0.7547, 0.6611, 0.9891, 0.8546)
+ENTER_REGION = (0.7547, 0.6611, 0.9995, 0.9991)
 TO_BATTLE_REGION = (0.8047, 0.7306, 0.9870, 0.9620)
 TO_BATTLE_BACKUP_REGION = (0.7786, 0.5694, 0.9938, 0.9528)
 CONFIRM_REGION = (0.0854, 0.5741, 0.9547, 0.9194)
-SELECT_REGION = (0.7646, 0.7972, 0.9943, 0.9889)
+SELECT_REGION = (0.7625, 0.7444, 0.9943, 0.9889)
 REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
 P_ENTER_REGION = (0.0516, 0.6028, 0.9895, 0.9375)
 SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
@@ -50,6 +50,14 @@ BOSS_X_OFFSET = 0.2005
 REFRESH_REGION = (0.6786, 0.0000, 0.9885, 0.1481)
 DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
 
+DRIVE_REGION = (0.4411, 0.7370, 0.9995, 0.9991)
+MD_REGION = (0.2417, 0.2639, 0.5078, 0.5463)
+ENTER_MD_REGION = (0.4901, 0.5074, 0.9708, 0.8620)
+BEG_BUFF_HARDCODE = [(0.1922, 0.3454), (0.3495, 0.3454), (0.5010, 0.3546),  (0.6568, 0.3565)]
+BEG_TOP_2_EGO_HARDCODE = [(0.7438, 0.3620), (0.7411, 0.5074)]
+BEG_EGO_REGION = (0.0870, 0.1713, 0.5906, 0.7778)
+REFUSE_GIFT_REGION = (0.6120, 0.7333, 0.9141, 0.9102)
+CLAIM_REWARD_REGION =  (0.5828, 0.6435, 0.9682, 0.9194)
 #move cursor to targeted class and click
 # Which classes must be to the RIGHT of TRAIN
 REQUIRE_RIGHT_OF_TRAIN = {FIGHT, QUESTION, SHOP}
@@ -119,7 +127,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     center_y = int((y1 + y2) / 2)
     det_conf = float(chosen.confidence)
 
-    if target_class in [GOOD_PACK, BAD_PACK, REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]:
+    if target_class in [GOOD_PACK, BAD_PACK]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{target_class}_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
@@ -417,6 +425,38 @@ def move_away():
 
     pyautogui.moveTo(x, y, duration=0.2)
 
+def click_drive():
+    return scan_box_click_text("drive", DRIVE_REGION)
+
+def click_md():
+    return scan_box_click_text("mirror", MD_REGION)
+
+def click_enter_md():
+    return scan_box_click_text("enter", ENTER_MD_REGION)
+
+def pick_ego_type(se_type):
+    return scan_box_click_text(se_type, BEG_EGO_REGION)
+
+def click_refuse_gift():
+    return scan_box_click_text("refuse", REFUSE_GIFT_REGION)
+
+def click_claim():
+    return scan_box_click_text("claim", CLAIM_REWARD_REGION)
+
+#hardcode way to click on the beginning buffs before md
+def click_list_points(points, delay=0.2):
+
+    screen_width, screen_height = pyautogui.size()
+    
+    for (x, y) in points:
+        # Convert ratio to absolute position
+        abs_x = int(x * screen_width)
+        abs_y = int(y * screen_height)
+
+        # Move to position and click
+        pyautogui.moveTo(abs_x, abs_y, duration=0.5)
+        pyautogui.click()
+        time.sleep(delay)
 
 
 def process_fight(boss_fight=False, skip_to_battle=False):
@@ -520,7 +560,6 @@ def process_fight(boss_fight=False, skip_to_battle=False):
                 #beofore click check if it's final stage
                    #Exit for ending the run
                 if boss_fight and check_ending():
-                    print("CONGRATS FINISHING A WHOLE RUN!")
                     return True
                 else:
                     click_confirm()
@@ -715,18 +754,77 @@ def process_shop_boss_packs():
 
 #def train_testing():
 
+def start_md(se_type):
+    #click drive
+    click_drive()
+    time.sleep(1.5)
+    click_md()
+    time.sleep(1.5)
+    click_enter_md()
+    time.sleep(1.5)
+    click_enter_md()
+    time.sleep(1)
+    click_confirm()
+    time.sleep(1.5)
+    click_list_points(BEG_BUFF_HARDCODE)
+    time.sleep(0.8)
+    click_enter()
+    time.sleep(0.8)
+    click_confirm()
+    time.sleep(1.5)
+    pick_ego_type(se_type)
+    click_list_points(BEG_TOP_2_EGO_HARDCODE)
+    click_select()
+    time.sleep(0.8)
+    click_confirm()
+    time.sleep(0.8)
+    click_confirm()
+    time.sleep(1)
+    click_refuse_gift()
+    time.sleep(0.8)
+    click_confirm()
+    time.sleep(0.8)
+    move_away()
+    time.sleep(2)
+    #make a while for good pack since loading could load quite long
+    while True:
+        if yolo_detect_click(GOOD_PACK, drag_down = True):
+            break
+        time.sleep(1)
+    return True
 
+def end_md():
+    click_claim()
+    time.sleep(0.8)
+    click_claim()
+    #click 3 seperate confirms 
+    n = 3
+    while n > 0:
+        click_confirm()
+        time.sleep(1)
+        n -= 1
 
 if __name__ == "__main__":
+
     #whether to stop at first shop
     shop_flag = int(input("Enter 1 to stop after entering shop, 0 to continue: "))
+    
+    run_num = 1
+    if shop_flag == 0:
+        run_num = int(input("Enter how many runs: "))
 
-    while True:
+    while run_num > 0:
+        time.sleep(2)
+        start_md(se_type="burn")
+        time.sleep(2.5)
         if scan_box_click_text("enter", ENTER_REGION, 0, 0):
             print("processing boss until next level!!!")  
             if process_shop_boss_packs():
                 print("We DONE!!!")
-                break           # Run post-shop boss path and process boss fight
+                #claim everything and return to original screen
+                end_md()
+                run_num -= 1
+                continue          # Run post-shop boss path and process boss fight
             time.sleep(2) 
         else:
             print("processing until shop!!!")
@@ -735,6 +833,9 @@ if __name__ == "__main__":
                 print("User wants to stop at shop")
                 break
             time.sleep(2)
+
+    #time.sleep(1)
+    #start_md(se_type="burn")
 
 
 
