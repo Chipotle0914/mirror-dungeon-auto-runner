@@ -428,6 +428,9 @@ def move_away():
 def click_drive():
     return scan_box_click_text("drive", DRIVE_REGION)
 
+def check_drive():
+    return scan_box_click_text("drive", DRIVE_REGION, 0, 0)
+
 def click_md():
     return scan_box_click_text("mirror", MD_REGION)
 
@@ -824,7 +827,15 @@ if __name__ == "__main__":
                 #claim everything and return to original screen
                 end_md()
                 run_num -= 1
-                continue          # Run post-shop boss path and process boss fight
+
+                time.sleep(2)
+                #wait until you see drive
+                while True:
+                    if check_drive():
+                        break
+                    time.sleep(1)
+                continue
+             # Run post-shop boss path and process boss fight
             time.sleep(2) 
         else:
             print("processing until shop!!!")
