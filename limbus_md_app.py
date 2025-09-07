@@ -7,6 +7,7 @@ import time
 import easyocr
 import keyboard 
 import sys
+
 #yepeeee
 # Load YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train16/weights/best.pt')
@@ -34,7 +35,7 @@ BAD_PACK = "bad_pack"
 ENTER_REGION = (0.7547, 0.6611, 0.9995, 0.9991)
 TO_BATTLE_REGION = (0.8047, 0.7306, 0.9870, 0.9620)
 TO_BATTLE_BACKUP_REGION = (0.7786, 0.5694, 0.9938, 0.9528)
-CONFIRM_REGION = (0.0854, 0.5741, 0.9547, 0.9194)
+CONFIRM_REGION = (0.0000, 0.3444, 0.9995, 0.9972)
 SELECT_REGION = (0.7625, 0.7444, 0.9943, 0.9889)
 REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
 P_ENTER_REGION = (0.0516, 0.6028, 0.9895, 0.9375)
@@ -52,7 +53,7 @@ DEFAULT_PRIOR = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD
 
 DRIVE_REGION = (0.4411, 0.7370, 0.9995, 0.9991)
 MD_REGION = (0.2417, 0.2639, 0.5078, 0.5463)
-ENTER_MD_REGION = (0.4901, 0.5074, 0.9708, 0.8620)
+ENTER_MD_REGION = (0.4938, 0.6269, 0.9714, 0.7917)
 BEG_BUFF_HARDCODE = [(0.1922, 0.3454), (0.3495, 0.3454), (0.5010, 0.3546),  (0.6568, 0.3565)]
 BEG_TOP_2_EGO_HARDCODE = [(0.7438, 0.3620), (0.7411, 0.5074)]
 BEG_EGO_REGION = (0.0870, 0.1713, 0.5906, 0.7778)
@@ -127,7 +128,7 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     center_y = int((y1 + y2) / 2)
     det_conf = float(chosen.confidence)
 
-    if target_class in [GOOD_PACK, BAD_PACK]:
+    if target_class in [FIGHT,ACQUIRE_EGO]:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         debug_img_path = f"debug_{target_class}_{timestamp}.png"
         cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
@@ -768,6 +769,8 @@ def start_md(se_type):
     click_enter_md()
     time.sleep(1)
     click_confirm()
+    time.sleep(1)
+    click_confirm()
     time.sleep(1.5)
     click_list_points(BEG_BUFF_HARDCODE)
     time.sleep(0.8)
@@ -805,51 +808,52 @@ def end_md():
     while n > 0:
         click_confirm()
         time.sleep(1)
+        move_away()
+        time.sleep(0.5)
         n -= 1
+    time.sleep(5)
 
 if __name__ == "__main__":
 
     #whether to stop at first shop
-    shop_flag = int(input("Enter 1 to stop after entering shop, 0 to continue: "))
+   # shop_flag = 0
     
-    run_num = 1
-    if shop_flag == 0:
-        run_num = int(input("Enter how many runs: "))
-
+    run_num = int(input("Enter how many runs: "))
+    skip_start = int(input("May resume in the run: "))
     while run_num > 0:
-        time.sleep(2)
-        start_md(se_type="burn")
-        time.sleep(2.5)
-        if scan_box_click_text("enter", ENTER_REGION, 0, 0):
-            print("processing boss until next level!!!")  
-            if process_shop_boss_packs():
-                print("We DONE!!!")
-                #claim everything and return to original screen
-                end_md()
-                run_num -= 1
 
-                time.sleep(2)
-                #wait until you see drive
-                while True:
-                    if check_drive():
-                        break
-                    time.sleep(1)
-                continue
-             # Run post-shop boss path and process boss fight
-            time.sleep(2) 
-        else:
-            print("processing until shop!!!")
-            process_start_to_shop()  # Run through Mirror Dungeon normally until shop
-            if shop_flag:
-                print("User wants to stop at shop")
-                break
+        if skip_start == 0:
             time.sleep(2)
+            start_md(se_type="burn")
+            time.sleep(2.5)
+        else:
+            start_skip = 0
+            while True:   
+                if scan_box_click_text("enter", ENTER_REGION, 0, 0):
+                    print("processing boss until next level!!!")  
+                    if process_shop_boss_packs():
+                        print("We DONE!!!") 
+                        move_away()
+                        time.sleep(2)
+                        break
+                    # Run post-shop boss path and process boss fight
+                    time.sleep(2) 
+                else:
+                    print("processing until shop!!!")
+                    process_start_to_shop()  # Run through Mirror Dungeon normally until shop
+                    #if shop_flag:
+                    #    print("User wants to stop at shop")
+                    #    break
+                    time.sleep(2)
 
-    #time.sleep(1)
-    #start_md(se_type="burn")
-
-
-
-
-       
-        
+      #  if shop_flag:
+      #      print("User will stop at shop, instead of proceeding")
+      #      break       
+        #claim everything and return to original screen
+        end_md()
+        run_num -= 1
+        #wait until you see drive
+        while True:
+            if check_drive():
+                break
+            time.sleep(1)
