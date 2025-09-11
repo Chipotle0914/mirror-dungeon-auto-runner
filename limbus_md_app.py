@@ -7,11 +7,9 @@ import time
 import easyocr
 import keyboard 
 import sys
-
-#yepeeee
 # Load YOLOv5 model
 model = torch.hub.load('ultralytics/yolov5', 'custom', path='limbus_train_model/mirror_dungeon_train16/weights/best.pt')
-model.conf = 0.8 
+model.conf = 0.85
 
 # Initialize EasyOCR reader once
 reader = easyocr.Reader(['en'], gpu=True)
@@ -41,7 +39,7 @@ REWARD_REGION = (0.0745, 0.1028, 0.8000, 0.2472)
 P_ENTER_REGION = (0.0516, 0.6028, 0.9895, 0.9375)
 SKIP_REGION = (0.3802, 0.1731, 0.5266, 0.7037)
 COMMENCE_CONTINUE_PROCEED_REGION = (0.7438, 0.7713, 0.9927, 0.9667)
-LEAVE_REGION = (0.7536, 0.7917, 0.9880, 0.9630)
+LEAVE_REGION = (0.7552, 0.7222, 0.9958, 0.9731)
 SHOP_COMFIRM_REGION = (0.4167, 0.4620, 0.7792, 0.8481)
 SKILL_CHECK_REGION = (0.0042, 0.8185, 0.7849, 0.8759)
 ENDING_SCREEN_TOP_LEFT_REGION = (0.0005, 0.0907, 0.3203, 0.2815)
@@ -63,62 +61,96 @@ CLAIM_REWARD_REGION =  (0.5828, 0.6435, 0.9682, 0.9194)
 # Which classes must be to the RIGHT of TRAIN
 REQUIRE_RIGHT_OF_TRAIN = {FIGHT, QUESTION, SHOP}
 
-def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = False, drag_down: bool = False, move_to: bool = True):
+
+# Short-term memory for TRAIN center (so brief misses don't block progress)
+_LAST_SEEN = {"train": {"cx": None, "t": 0.0}}
+_LAST_TTL_SEC = 2.0          # how long we trust the last seen TRAIN center
+_TRAIN_RELAX_CONF = 0.60     # allow a lower conf just for the TRAIN-side check
+
+def yolo_detect_click(
+    target_class: str,
+    click_num: int = 1,
+    top_most: bool = False,
+    drag_down: bool = False,
+    move_to: bool = True,
+    require_right_of_train: bool = True,  # keep rule enabled by default
+    fallback_if_no_train: bool = True     # SOFT rule: relax if TRAIN isn't visible
+):
     print(f"🔍 Searching for '{target_class}' using YOLO...")
 
-    # Capture screenshot (ImageGrab returns RGB)
-    screenshot = np.array(ImageGrab.grab())
-    screenshot_rgb = cv2.cvtColor(screenshot, cv2.COLOR_BGR2RGB)  # keep if your pipeline expects RGB
+    # ImageGrab returns RGB already; YOLOv5 expects RGB
+    screenshot_rgb = np.array(ImageGrab.grab())
 
     # Run detection
     results = model(screenshot_rgb)
     detections = results.pandas().xyxy[0]
 
-    # Filter target candidates by class + confidence
+    # ---------- cache TRAIN center (best of current frame) ----------
+    now = time.time()
+    train_now = detections[
+        (detections['name'] == TRAIN)
+        # allow a slightly lower threshold for the *auxiliary* right-of check
+        & (detections['confidence'] >= min(_TRAIN_RELAX_CONF, float(getattr(model, "conf", 0.25))))
+    ].sort_values(by='confidence', ascending=False)
+
+    if not train_now.empty:
+        tx1, tx2 = train_now.iloc[0][['xmin', 'xmax']]
+        _LAST_SEEN["train"] = {"cx": int((tx1 + tx2) / 2), "t": now}
+
+    # ---------- target matches ----------
     matches = detections[
         (detections['name'] == target_class) &
-        (detections['confidence'] >= model.conf)
+        (detections['confidence'] >= float(getattr(model, "conf", 0.25)))
     ]
     if matches.empty:
         print(f"❌ '{target_class}' not found.")
         return False
-
-    # Sort by confidence
     matches = matches.sort_values(by='confidence', ascending=False)
 
-    # --- Right-of-TRAIN rule only for selected classes ---
+    # ---------- apply (soft) right-of-TRAIN rule if needed ----------
     valid = []
-    if target_class in REQUIRE_RIGHT_OF_TRAIN:
-        train_match = detections[
-            (detections['name'] == TRAIN) &
-            (detections['confidence'] >= model.conf)
-        ].sort_values(by='confidence', ascending=False)
+    if require_right_of_train and (target_class in REQUIRE_RIGHT_OF_TRAIN):
+        # Pick a TRAIN cx to compare against: prefer current, else last seen (within TTL)
+        cx_train = None
+        if not train_now.empty:
+            tx1, tx2 = train_now.iloc[0][['xmin', 'xmax']]
+            cx_train = int((tx1 + tx2) / 2)
+        else:
+            last = _LAST_SEEN["train"]
+            if last["cx"] is not None and (now - last["t"] <= _LAST_TTL_SEC):
+                cx_train = last["cx"]
 
-        if train_match.empty:
-            print(f"⚠️ TRAIN not detected; cannot verify '{target_class}' is right of TRAIN → skipping.")
-            return False
-
-        tx1, _, tx2, _ = train_match.iloc[0][['xmin', 'ymin', 'xmax', 'ymax']]
-        train_center_x = int((tx1 + tx2) / 2)
-
-        for _, row in matches.iterrows():
-            x1, y1, x2, y2 = row[['xmin', 'ymin', 'xmax', 'ymax']]
-            cx = int((x1 + x2) / 2)
-            if cx > train_center_x:  # must be strictly right of TRAIN
-                valid.append(row)
-
-        if not valid:
-            print(f"❌ '{target_class}' found, but none to the RIGHT of TRAIN (TRAIN cx={train_center_x}).")
-            return False
+        if cx_train is None:
+            # SOFT RULE: if we can't verify right-of-TRAIN this frame, optionally relax
+            msg = f"⚠️ TRAIN not detected now (no recent memory); cannot verify '{target_class}' right-of-TRAIN"
+            if fallback_if_no_train:
+                print(msg + " → relaxing constraint.")
+                valid = list(matches.itertuples(index=False))
+            else:
+                print(msg + " → skipping.")
+                move_away()
+                return False
+        else:
+            for _, row in matches.iterrows():
+                cx = int((row['xmin'] + row['xmax']) / 2)
+                if cx > cx_train:
+                    valid.append(row)
+            if not valid:
+                print(f"❌ '{target_class}' found, but none to the RIGHT of TRAIN (cx_train={cx_train}).")
+                return False
+            else:
+                print(f"🧭 Right-of-TRAIN check OK using cx_train={cx_train}.")
     else:
         # No right-of-TRAIN constraint for other classes
         valid = list(matches.itertuples(index=False))
 
-    # Choose candidate
+    if target_class in [TRAIN]:
+        save_shop_screenshot("train")
+
+    # ---------- choose candidate ----------
     if top_most:
         print("↕️ Top-most mode enabled")
-        # pick smallest ymin among valid
-        chosen = min(valid, key=lambda r: getattr(r, 'ymin', r.ymin))
+        chosen = min(valid, key=lambda r: getattr(r, 'ymin', r.ymin) if hasattr(r, 'ymin') else r.ymin)
     else:
         chosen = valid[0]
 
@@ -128,18 +160,9 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
     center_y = int((y1 + y2) / 2)
     det_conf = float(chosen.confidence)
 
-    if target_class in [FIGHT,ACQUIRE_EGO]:
-        timestamp = time.strftime("%Y%m%d-%H%M%S")
-        debug_img_path = f"debug_{target_class}_{timestamp}.png"
-        cv2.imwrite(debug_img_path, cv2.cvtColor(screenshot, cv2.COLOR_RGB2BGR))
-        print(f"🖼️ Saved debug screenshot to {debug_img_path}")
-        print(f"🔎 Confidence for '{target_class}': {det_conf:.2f} (threshold: {model.conf})")
-
-    if target_class in REQUIRE_RIGHT_OF_TRAIN:
-        print(f"🧭 Right-of-TRAIN check OK: {target_class} cx={center_x}")
-
     print(f"✅ Found '{target_class}' at ({center_x}, {center_y}) | conf={det_conf:.2f}")
 
+    # ---------- act ----------
     if move_to:
         pyautogui.moveTo(center_x, center_y, duration=0.2)
 
@@ -149,16 +172,19 @@ def yolo_detect_click(target_class: str, click_num: int = 1, top_most: bool = Fa
         pyautogui.mouseUp()
         print("Successfully Selected Theme pack!")
     else:
-        for _ in range(click_num):
+        for _ in range(max(0, click_num)):
             pyautogui.click()
             time.sleep(0.3)
-        print(f"🖱️ Clicked on '{target_class}'")
+        if click_num > 0:
+            print(f"🖱️ Clicked on '{target_class}'")
+        else:
+            print(f"👀 Detected '{target_class}' (no click)")
 
     return True
 
 
 
-def save_shop_screenshot(prefix="boss_check"):
+def save_shop_screenshot(prefix):
     """Grab a full-screen screenshot and save it with a timestamped filename."""
     timestamp = time.strftime("%Y%m%d-%H%M%S")
     path = f"{prefix}_{timestamp}.png"
@@ -339,12 +365,8 @@ def check_ending():
 def check_skip():
     return scan_box_click_text("skip", SKIP_REGION, 0, 0)
 
-def click_skip_5_times(wait=False):
-    res = scan_box_click_text("skip", SKIP_REGION, 1, 5)
-    if wait:
-        save_shop_screenshot()
-        time.sleep(1)
-    return res
+def click_skip_5_times():
+    return scan_box_click_text("skip", SKIP_REGION, 1, 5)
 
 def click_continue():
     return scan_box_click_text("continue", COMMENCE_CONTINUE_PROCEED_REGION)
@@ -816,44 +838,40 @@ def end_md():
 if __name__ == "__main__":
 
     #whether to stop at first shop
-   # shop_flag = 0
+    shop_flag = 0
     
     run_num = int(input("Enter how many runs: "))
     skip_start = int(input("May resume in the run: "))
+    se_type = (input("Enter status effect of your team: "))
+
     while run_num > 0:
 
         if skip_start == 0:
             time.sleep(2)
-            start_md(se_type="burn")
-            time.sleep(2.5)
-        else:
-            start_skip = 0
-            while True:   
-                if scan_box_click_text("enter", ENTER_REGION, 0, 0):
-                    print("processing boss until next level!!!")  
-                    if process_shop_boss_packs():
-                        print("We DONE!!!") 
-                        move_away()
-                        time.sleep(2)
-                        break
-                    # Run post-shop boss path and process boss fight
-                    time.sleep(2) 
-                else:
-                    print("processing until shop!!!")
-                    process_start_to_shop()  # Run through Mirror Dungeon normally until shop
-                    #if shop_flag:
-                    #    print("User wants to stop at shop")
-                    #    break
-                    time.sleep(2)
+            start_md(se_type)
+            time.sleep(3)
 
-      #  if shop_flag:
-      #      print("User will stop at shop, instead of proceeding")
-      #      break       
-        #claim everything and return to original screen
+        while True:   
+            if scan_box_click_text("enter", ENTER_REGION, 0, 0):
+                print("processing boss until next level!!!")  
+                if process_shop_boss_packs():
+                    print("We DONE!!!") 
+                    move_away()
+                    time.sleep(2)
+                    break
+                # Run post-shop boss path and process boss fight
+                time.sleep(2) 
+            else:
+                print("processing until shop!!!")
+                process_start_to_shop()  # Run through Mirror Dungeon normally until shop
+                if shop_flag:
+                    print("User wants to stop at shop")
+                    break
+                time.sleep(2)
         end_md()
         run_num -= 1
         #wait until you see drive
         while True:
             if check_drive():
                 break
-            time.sleep(1)
+        time.sleep(1)
