@@ -671,6 +671,8 @@ def main():
             bot.start_md(se_type)
             sleep_s(3.0)
 
+        #set stkip_start back to 0 so after resume, it'll re-start the run probably
+        skip_start = 0
         while True:
             # “enter” means we’re at the shop door/boss path
             if bot.ocr.click_text("enter", ENTER_REGION, move_to=False, clicks=0):
