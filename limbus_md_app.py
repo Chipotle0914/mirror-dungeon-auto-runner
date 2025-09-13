@@ -186,10 +186,10 @@ class YoloDetector:
                     log(f"🧭 Right-of-TRAIN check OK using cx_train={cx_train}.")
         else:
             valid = list(matches.itertuples(index=False))
-
+        """
         if save_train_shot and target_class == TRAIN:
             Bot.save_full_screenshot("train")
-
+        """
         # choose candidate
         if top_most:
             log("↕️ Top-most mode enabled")
@@ -444,9 +444,10 @@ class Bot:
 
         # wait for GOOD_PACK (can load late)
         while True:
-            if self.yolo_click(GOOD_PACK, drag_down=True):
+            if self.yolo_click(GOOD_PACK, move_to=False, clicks=0):
                 break
             sleep_s(1.0)
+        self.yolo_click(GOOD_PACK, drag_down=True)
         return True
 
     def process_fight(self, boss_fight: bool = False, skip_to_battle: bool = False) -> bool:
@@ -525,14 +526,7 @@ class Bot:
 
             # Skill check flow
             elif self.check_skip():
-                if not self.click_skip(n=5): sleep_s(1.0); self.click_skip(n=5)
-                if self.check_skill_check():
-                    self.click_best_skill_check(); sleep_s(1.0)
-                if self.click_commence(): sleep_s(3.0)
-                else: sys.exit("During battle, can't find commence")
-                if not self.click_skip(n=5): sleep_s(1.0); self.click_skip(n=5)
-                if self.click_continue(): sleep_s(1.5); continue
-                else: sys.exit("During battle, can't find continue")
+                self.process_question(mid_fight=True); continue
 
             else:
                 # “P / Enter” nudge for special boss UI
@@ -546,9 +540,12 @@ class Bot:
 
         return False
 
-    def process_question(self) -> None:
+    def process_question(self, mid_fight: bool = False) -> None:
         self.click_skip(n=5)
         while True:
+
+            if mid_fight and self.check_p_enter():
+                break
             # Exit to TRAIN (double seen)
             if self.yolo_click(TRAIN, click_num=0, move_to=False):
                 sleep_s(1.5)
@@ -660,7 +657,7 @@ class Bot:
 # =========================
 
 def main():
-    MODEL_PATH = 'limbus_train_model/mirror_dungeon_train16/weights/best.pt'  # same as your original
+    MODEL_PATH = 'limbus_train_model/mirror_dungeon_train16/weights/best.pt'  
     bot = Bot(MODEL_PATH, yolo_conf=0.85)
 
     shop_flag = 0
