@@ -444,7 +444,7 @@ class Bot:
 
         # wait for GOOD_PACK (can load late)
         while True:
-            if self.yolo_click(GOOD_PACK, move_to=False, clicks=0):
+            if self.yolo_click(GOOD_PACK, move_to=False, click_num=0):
                 break
             sleep_s(1.0)
         self.yolo_click(GOOD_PACK, drag_down=True)
