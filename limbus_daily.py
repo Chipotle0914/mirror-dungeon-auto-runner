@@ -170,6 +170,8 @@ WIN_REGION = Region(0.0000, 0.7148, 0.9995, 0.8759)
 WINDOW_REGION = Region(0.4828, 0.8500, 0.5500, 0.9398)
 THREAD_TAB_REGION = Region(0.0479, 0.4204, 0.1724, 0.5065)
 MISSION_REGION = Region(0.2349, 0.0398, 0.3469, 0.1093)
+BATTLE_PASS_REGION = Region(0.1234, 0.0389, 0.1234, 0.0389)
+CLAIM_ALL_REGION = Region(0.5047, 0.7648, 0.5047, 0.7648)
 PASS_POINTS = [(0.8495, 0.3287)]
 GET_DAILY_POINTS = [(0.4000, 0.3194), (0.4000, 0.4389), (0.4036, 0.5593), (0.4031, 0.6815), (0.3990, 0.7870)]
 LUX_POINTS = [(0.3484, 0.2472)]
@@ -203,8 +205,9 @@ count = 3
 
 while count > 0:
     if program.click_text("enter", THREAD_ENTER_REGION):
+        sleep_s(1)
         program.click_text("difficulty", DIFFICULTY_REGION)
-        sleep_s(0.5)
+        sleep_s(1)
         program.click_text("battle", TO_BATTLE_REGION)
         while True:
             if program.click_text("confirm", CONFIRM_REGION, move_to=False, clicks=0):
@@ -225,3 +228,9 @@ sleep_s(0.5)
 program.click_text("pass", MISSION_REGION)
 sleep_s(0.5)
 program.click_points(GET_DAILY_POINTS)
+sleep_s(0.5)
+program.click_text("pass", BATTLE_PASS_REGION)
+sleep_s(0.5)
+program.click_text("claim", CLAIM_ALL_REGION)
+sleep_s(1)
+pyautogui.press('enter')
