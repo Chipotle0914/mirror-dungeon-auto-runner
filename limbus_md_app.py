@@ -5,7 +5,7 @@ import sys
 import time
 from dataclasses import dataclass
 from typing import Dict, Iterable, Optional, Tuple, List
-
+from auto_note.limbus_bot import send_me
 import torch
 import cv2
 import pyautogui
@@ -92,8 +92,9 @@ CLAIM_REWARD_REGION = Region(0.5828, 0.6435, 0.9682, 0.9194)
 
 # Hardcoded click points (ratios)
 BEG_BUFF_HARDCODE   = [(0.1922, 0.3454), (0.3495, 0.3454), (0.5010, 0.3546), (0.6568, 0.3565)]
+#BEG_BUFF_HARDCODE   = []
 BEG_TOP_2_EGO       = [(0.7438, 0.3620), (0.7411, 0.5074)]
-
+#BEG_TOP_2_EGO       = [(0.7438, 0.3620)]
 DEFAULT_PRIOR: List[str] = [REWARD_STAR, REWARD_MONEY, REWARD_RANDOM, REWARD_GAMBLE, REWARD_RESOURCE]
 REQUIRE_RIGHT_OF_TRAIN = {FIGHT, QUESTION, SHOP}
 BOSS_X_OFFSET = 0.2005
@@ -107,7 +108,7 @@ _LAST_TTL_SEC     = 2.0
 # =========================
 
 class YoloDetector:
-    def __init__(self, model_path: str, conf: float = 0.85):
+    def __init__(self, model_path: str, conf: float = 0.65):
         self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
         self.model.conf = conf
         self._last_train = {"cx": None, "t": 0.0}
@@ -187,9 +188,10 @@ class YoloDetector:
         else:
             valid = list(matches.itertuples(index=False))
         """
-        if save_train_shot and target_class == TRAIN:
-            Bot.save_full_screenshot("train")
+        if save_train_shot and (target_class == TRAIN):
+            Bot.save_full_screenshot("TRAIN")
         """
+
         # choose candidate
         if top_most:
             log("↕️ Top-most mode enabled")
@@ -322,7 +324,7 @@ class OcrAgent:
 # =========================
 
 class Bot:
-    def __init__(self, model_path: str, yolo_conf: float = 0.85):
+    def __init__(self, model_path: str, yolo_conf: float = 0.60):
         self.det = YoloDetector(model_path, conf=yolo_conf)
         self.ocr = OcrAgent()
 
@@ -347,6 +349,7 @@ class Bot:
         pyautogui.moveTo(x, y, duration=0.2)
         pyautogui.scroll(-50)
         sleep_s(0.2)
+    
 
     # ---- OCR wrappers ----
     def click_enter(self) -> bool:          return self.ocr.click_text("enter", ENTER_REGION)
@@ -366,6 +369,7 @@ class Bot:
     def click_refresh(self) -> bool:        return self.ocr.click_text("refresh", REFRESH_REGION)
     def click_claim(self) -> bool:          return self.ocr.click_text("claim", CLAIM_REWARD_REGION)
 
+    def enter_check(self) -> bool:          return self.ocr.click_text("enter", ENTER_REGION, move_to=False, clicks=0)
     def check_p_enter(self) -> bool:
         return (self.ocr.click_text("win", P_ENTER_REGION, move_to=False, clicks=0) or
                 self.ocr.click_text("damage", P_ENTER_REGION, move_to=False, clicks=0))
@@ -388,6 +392,7 @@ class Bot:
     # ---- Mouse helpers ----
     def move_away(self) -> None: Bot.move_away_static()
     def reset_view(self) -> None: Bot.reset_view_static()
+
 
     def click_list_points(self, points: Iterable[Tuple[float, float]], delay: float = 0.2) -> None:
         sw, sh = pyautogui.size()
@@ -440,11 +445,11 @@ class Bot:
         self.click_confirm();                      sleep_s(1.0)
         self.ocr.click_text("refuse", REFUSE_GIFT_REGION); sleep_s(0.8)
         self.click_confirm();                      sleep_s(0.8)
-        self.move_away();                          sleep_s(2.0)
+        self.move_away();                          sleep_s(10.0)
 
         # wait for GOOD_PACK (can load late)
         while True:
-            if self.yolo_click(GOOD_PACK, move_to=False, click_num=0):
+            if self.yolo_click(GOOD_PACK, click_num=0, move_to=False):
                 break
             sleep_s(1.0)
         self.yolo_click(GOOD_PACK, drag_down=True)
@@ -452,10 +457,17 @@ class Bot:
 
     def process_fight(self, boss_fight: bool = False, skip_to_battle: bool = False) -> bool:
         if not skip_to_battle:
+
+            if self.check_skip():
+                self.process_question()
+                return False
             while True:
                 if (self.click_to_battle() or
                     self.ocr.click_text("clear", TO_BATTLE_BACKUP, move_to=True, clicks=0, y_offset_frac=0.1537)):
                     pyautogui.click(); sleep_s(0.3)
+                    break
+                #some how skipped and went straight in battle
+                if self.check_p_enter():
                     break
 
         sleep_s(1.5)  # reduce misreads
@@ -464,11 +476,12 @@ class Bot:
             # Exit for regular fights: train seen twice
             if (not boss_fight) and self.yolo_click(TRAIN, click_num=0, move_to=False):
                 sleep_s(1.0)
-                if self.yolo_click(TRAIN, click_num=0):
+                if self.yolo_click(TRAIN, click_num=0, move_to=False):
                     if self.check_p_enter():
                         continue
                     break
                 else:
+                    
                     continue
 
             # Exit for boss: pack appeared (double-check)
@@ -503,7 +516,10 @@ class Bot:
             elif self.yolo_click(ACQUIRE_EGO):
                 sleep_s(0.8)
                 if not self.click_select():
-                    continue
+                    if self.check_confirm():
+                        self.click_confirm()
+                    else:
+                        continue
                 sleep_s(1.5)
                 if not self.click_confirm():
                     pyautogui.mouseDown(button='left'); sleep_s(0.001); pyautogui.mouseUp(button='left')
@@ -549,12 +565,14 @@ class Bot:
             # Exit to TRAIN (double seen)
             if self.yolo_click(TRAIN, click_num=0, move_to=False):
                 sleep_s(1.5)
-                if self.yolo_click(TRAIN, click_num=0): break
+                if self.yolo_click(TRAIN, click_num=0, move_to=False): break
                 else: continue
 
             elif self.check_confirm():
                 self.click_confirm(); sleep_s(1.0); continue
-
+            
+            
+            
             elif self.click_proceed():
                 if not self.click_skip(n=5): sleep_s(1.0); self.click_skip(n=5)
                 sleep_s(1.5); continue
@@ -566,7 +584,10 @@ class Bot:
 
             elif self.click_continue():
                 sleep_s(1.0); continue
-
+            
+            elif self.check_skill_check():
+                self.click_best_skill_check(); sleep_s(1.0); continue
+            
             elif self.yolo_click(A_CHOICES, top_most=True):
                 if not self.click_skip(n=5): sleep_s(1.0); self.click_skip(n=5)
                 sleep_s(1.0); continue
@@ -575,14 +596,14 @@ class Bot:
                 if not self.click_skip(n=5): sleep_s(1.0); self.click_skip(n=5)
                 sleep_s(1.0); continue
 
-            elif self.check_skill_check():
-                self.click_best_skill_check(); sleep_s(1.0); continue
+            
 
             elif self.check_to_battle():
                 self.process_fight(); break
-
+            
             elif self.check_p_enter():
-                self.process_fight(skip_to_battle=True); break
+                #self.process_fight(skip_to_battle=True); 
+                break
 
             elif self.check_leave():
                 break
@@ -600,10 +621,18 @@ class Bot:
                 break
             elif self.yolo_click(QUESTION):
                 sleep_s(1.0); self.click_enter(); sleep_s(1.5)
-                self.process_question(); self.reset_view(); sleep_s(0.5)
+                self.process_question(); self.reset_view(); sleep_s(0.5) 
             elif self.yolo_click(FIGHT):
                 sleep_s(1.0); self.click_enter(); sleep_s(0.8)
                 self.process_fight(); self.reset_view(); sleep_s(1.0)
+            #somehow finding ego gift after finding a stage
+            elif self.enter_check():
+                self.yolo_click(TRAIN)
+            else:
+                pyautogui.click()
+                pyautogui.scroll(40)
+
+                
 
     def process_shop_boss_packs(self) -> bool:
         self.click_enter();          sleep_s(1.0)
@@ -615,17 +644,33 @@ class Bot:
 
         if self.process_fight(boss_fight=True):
             return True
-
+        self.move_away()
         sleep_s(2.0)
         count = 0
-        while count < 3 and ((not self.yolo_click(GOOD_PACK, click_num=0, move_to=False)) and
-                              self.yolo_click(BAD_PACK,  click_num=0, move_to=False)):
-            self.click_refresh(); sleep_s(3.0); count += 1
-
+        # NEW LOGIC — IF GOOD PACK DETECTED, DRAG IMMEDIATELY
+        if self.yolo_click(GOOD_PACK, click_num=0, move_to=False):
+            log("🎯 GOOD PACK detected — dragging now (first scan)")
+            self.yolo_click(GOOD_PACK, drag_down=True)
+            sleep_s(3.0)
+            return False
+        # OTHERWISE — HANDLE BAD PACK REFRESH LOOP
+        while count < 3 and self.yolo_click(BAD_PACK, click_num=0, move_to=False):
+            log("⚠ BAD PACK detected — refreshing...")
+            self.click_refresh()
+            sleep_s(3.0)
+            count += 1
+            # After refresh, check again for good pack
+            if self.yolo_click(GOOD_PACK, click_num=0, move_to=False):
+                log("🎯 GOOD PACK detected after refresh — dragging")
+                self.yolo_click(GOOD_PACK, drag_down=True)
+                sleep_s(3.0)
+                return False
+        
+        # FINAL fallback attempt
         self.move_away()
-        self.yolo_click(GOOD_PACK, drag_down=True); sleep_s(3.0)
+        self.yolo_click(GOOD_PACK, drag_down=True)
+        sleep_s(3.0)
         return False
-
     # ---- Subroutines used in flows ----
 
     def check_skill_check(self) -> bool:
@@ -657,8 +702,8 @@ class Bot:
 # =========================
 
 def main():
-    MODEL_PATH = 'limbus_train_model/mirror_dungeon_train16/weights/best.pt'  
-    bot = Bot(MODEL_PATH, yolo_conf=0.85)
+    MODEL_PATH = 'yolov5/runs/train/mirror_dungeon_train10/weights/best.pt'  
+    bot = Bot(MODEL_PATH, yolo_conf=0.80)
 
     shop_flag = 0
     run_num   = int(input("Enter how many runs: "))
@@ -670,8 +715,7 @@ def main():
             sleep_s(2.0)
             bot.start_md(se_type)
             sleep_s(3.0)
-
-        #set stkip_start back to 0 so after resume, it'll re-start the run probably
+        #set back to zero after it resumes
         skip_start = 0
         while True:
             # “enter” means we’re at the shop door/boss path
@@ -691,6 +735,7 @@ def main():
                 sleep_s(2.0)
 
         bot.end_md()
+        send_me("Finished a run!")
         run_num -= 1
 
         # wait until “drive” visible again before next run
