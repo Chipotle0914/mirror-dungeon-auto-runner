@@ -1,3 +1,221 @@
+Chipotle
+chipotle2634
+Invisible
+
+limbus_bot
+APP
+ — 12/14/2025 2:39 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 3:37 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 4:17 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 4:59 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 5:38 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 6:29 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 2:47 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 7:59 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 9:16 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 10:19 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 11:07 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/14/2025 11:54 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 12:38 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 1:26 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 2:17 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 3:02 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 3:45 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 4:30 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 5:26 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 6:14 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 6:56 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 7:45 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 8:33 AM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 2:55 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 3:53 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 4:37 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 5:28 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 6:11 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 7:00 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 7:44 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 8:39 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 9:33 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 10:22 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 11:04 PM
+Finished a run!
+limbus_bot
+APP
+ — 12/15/2025 11:47 PM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 12:41 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 1:25 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 2:07 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 2:56 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 3:37 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 4:17 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 5:05 AM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 10:35 PM
+Finished a run!
+limbus_bot
+APP
+ — Yesterday at 11:17 PM
+Finished a run!
+limbus_bot
+APP
+ — 1:39 AM
+Finished a run!
+limbus_bot
+APP
+ — 2:21 AM
+Finished a run!
+limbus_bot
+APP
+ — 3:11 AM
+Finished a run!
+limbus_bot
+APP
+ — 3:56 AM
+Finished a run!
+limbus_bot
+APP
+ — 4:41 AM
+Finished a run!
+limbus_bot
+APP
+ — 10:04 AM
+Finished a run!
+Chipotle — 4:02 PM
+# OCR (EasyOCR)
+import easyocr
+
+# Mouse movement, clicking, keyboard pressing, screenshots
+import pyautogui
+Expand
+message.txt
+10 KB
+﻿
+limbus_bot
+APP
+limbus_bot
+#2766
 # OCR (EasyOCR)
 import easyocr
 
@@ -61,13 +279,13 @@ class OcrAgent:
         return centers
 
     def click_text(
-        self,
-        target: str,
-        region: Region,
-        move_to: bool = True,
-        clicks: int = 1,
-        y_offset_frac: float = 0.0
-    ) -> bool:
+    self,
+    target: str,
+    region: Region,
+    move_to: bool = True,
+    clicks: int = 1,
+    y_offset_frac: float = 0.0
+) -> bool:
         (x1, y1, x2, y2) = region.abs_coords()
         xoff = 0
         yoff = int(y_offset_frac * pyautogui.size()[1])
@@ -79,28 +297,50 @@ class OcrAgent:
             "width": x2 - x1,
             "height": y2 - y1
         }
+
+        # =========================
+        # Screen grab
+        # =========================
         img = np.array(self.sct.grab(monitor))
-        img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB) 
+        img = cv2.cvtColor(img, cv2.COLOR_BGRA2RGB)
 
-        results = self.reader.readtext(img)
+        # =========================
+        # 🔧 OCR PREPROCESS (NEW)
+        # =========================
+        gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+        gray = cv2.normalize(gray, None, 0, 255, cv2.NORM_MINMAX)
+
+        # =========================
+        # 🔧 OCR WITH ALLOWLIST (NEW)
+        # =========================
+        results = self.reader.readtext(
+            gray,
+            allowlist="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        )
+
         log(str(results))
-
         target_lower = target.lower().strip()
 
         for (bbox, text, conf) in results:
             text_lower = text.lower().strip()
+
+            # substring match (kept)
             if target_lower in text_lower:
                 xs = [p[0] for p in bbox]
                 ys = [p[1] for p in bbox]
-                left = min(xs); right = max(xs)
-                width = right - left
+
+                left = min(xs)
+                right = max(xs)
+                width = max(1, right - left)
                 y_center = (min(ys) + max(ys)) / 2
 
                 tokens = text_lower.split()
                 log(f"all detected words: {tokens}")
-                target_tokens = target_lower.split()
 
+                target_tokens = target_lower.split()
                 idx = None
+
+                # multi-word target
                 if len(target_tokens) > 1:
                     a, b = target_tokens[0], target_tokens[1]
                     for i in range(len(tokens) - 1):
@@ -113,6 +353,7 @@ class OcrAgent:
                         if single in tk:
                             idx = i
                             break
+
                 if idx is None:
                     continue
 
@@ -120,18 +361,25 @@ class OcrAgent:
                 log(f"🎯 Matched token index: {idx} (token='{tokens[idx]}')")
 
                 centers_x = self._token_centers(text_lower, tokens, left, width)
-                click_x_local = centers_x[idx] if idx < len(centers_x) else left + width * ((idx + 0.5) / max(1, len(tokens)))
+                click_x_local = (
+                    centers_x[idx]
+                    if idx < len(centers_x)
+                    else left + width * ((idx + 0.5) / max(1, len(tokens)))
+                )
 
                 click_x = x1 + int(click_x_local) + xoff
                 click_y = y1 + int(y_center) + yoff
 
-                log(f"✅ Found '{text}' → clicking at ({click_x}, {click_y}) | conf={conf:.2f}")
+                log(f"✅ OCR='{text}' conf={conf:.2f} → ({click_x}, {click_y})")
+
                 if move_to:
                     pyautogui.moveTo(click_x, click_y, duration=0.2)
+
                 for _ in range(max(0, clicks)):
                     pyautogui.click()
                     sleep_s(0.3)
-                log(f"🖱️ Clicked on '{target}'" if clicks > 0 else f"👀 Hovered '{target}'")
+
+                log("🖱️ Clicked" if clicks > 0 else "👀 Hovered")
                 return True
 
         log(f"❌ '{target}' not found in region.")
@@ -156,13 +404,18 @@ class OcrAgent:
             for _ in range(max(1, clicks)):
                 pyautogui.click()
                 sleep_s(delay_between)
-
+    def move_point(self, point: Tuple[float, float], duration: float = 0.2):
+        sw, sh = pyautogui.size()
+        x = int(point[0] * sw)
+        y = int(point[1] * sh)
+        log(f"🖱️ Moving mouse to ({point[0]:.4f}, {point[1]:.4f}) → ({x}, {y})")
+        pyautogui.moveTo(x, y, duration=duration)
 
 DRIVE_REGION = Region(0.6448, 0.8426, 0.7146, 0.9426)
 
 ENTER_REGION = Region(0.7776, 0.6278, 0.9427, 0.6880)
 TO_BATTLE_REGION = Region(0.8068, 0.7556, 0.9745, 0.8583)
-CONFIRM_REGION = Region(0.7797, 0.7102, 0.9464, 0.8426)
+CONFIRM_REGION = Region(0.7849, 0.7139, 0.9443, 0.8333)
 THREAD_REGION = Region(0.0411, 0.4139, 0.1755, 0.5130)
 THREAD_ENTER_REGION = Region(0.2188, 0.6435, 0.3630, 0.6889)
 DIFFICULTY_REGION = Region(0.3792, 0.6213, 0.4589, 0.6639)
@@ -194,14 +447,17 @@ while True:
         break
     else:
         if program.click_text("win", WIN_REGION, move_to=False, clicks=0):
-            pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); sleep_s(3.0)
+            pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); 
+            program.move_point((0.0792, 0.9352))
+            sleep_s(3.0)
 
 #exit exp, swap to thread
 
 program.click_text("confirm", CONFIRM_REGION)
+
 program.click_text("thread", THREAD_TAB_REGION)
 
-count = 3
+count = 1
 
 while count > 0:
     if program.click_text("enter", THREAD_ENTER_REGION):
@@ -214,15 +470,18 @@ while count > 0:
                 break
             else:
                 if program.click_text("win", WIN_REGION, move_to=False, clicks=0):
-                    pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); sleep_s(3.0)
+                    pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); 
+                    program.move_point((0.0792, 0.9352))
+                    sleep_s(3.0)
         program.click_text("confirm", CONFIRM_REGION)
         count -= 1
 
 #last page
+sleep_s(1)
 program.click_points(BACK_ARROW_POINTS)
 sleep_s(0.5)
 program.click_text("window", WINDOW_REGION)
-sleep_s(0.5)
+sleep_s(1)
 program.click_points(PASS_POINTS)
 sleep_s(0.5)
 program.click_text("pass", MISSION_REGION)
@@ -234,3 +493,5 @@ sleep_s(0.5)
 program.click_text("claim", CLAIM_ALL_REGION)
 sleep_s(1)
 pyautogui.press('enter')
+message.txt
+10 KB
