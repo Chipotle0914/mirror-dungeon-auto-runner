@@ -457,7 +457,7 @@ program.click_text("confirm", CONFIRM_REGION)
 
 program.click_text("thread", THREAD_TAB_REGION)
 
-count = 1
+count = 3
 
 while count > 0:
     if program.click_text("enter", THREAD_ENTER_REGION):
