@@ -193,8 +193,15 @@ class OcrAgent:
         log(f"🖱️ Moving mouse to ({point[0]:.4f}, {point[1]:.4f}) → ({x}, {y})")
         pyautogui.moveTo(x, y, duration=duration)
 
-DRIVE_REGION = Region(0.6448, 0.8426, 0.7146, 0.9426)
+    def click_skip_5(self):
+        self.click_text("skip", SKIP_REGION, clicks=5)
 
+
+
+COMMENCE_AND_CONTINUE_REGION = Region(0.7703, 0.7917, 0.9865, 0.9796)
+SKILL_CHECK_REGION = Region(0.0000, 0.7843, 0.9995, 0.9991)
+SKIP_REGION = Region(0.4432, 0.4093, 0.4932, 0.4472)
+DRIVE_REGION = Region(0.6448, 0.8426, 0.7146, 0.9426)
 ENTER_REGION = Region(0.7776, 0.6278, 0.9427, 0.6880)
 TO_BATTLE_REGION = Region(0.8068, 0.7556, 0.9745, 0.8583)
 CONFIRM_REGION = Region(0.7849, 0.7139, 0.9443, 0.8333)
@@ -207,13 +214,47 @@ THREAD_TAB_REGION = Region(0.0479, 0.4204, 0.1724, 0.5065)
 MISSION_REGION = Region(0.2349, 0.0398, 0.3469, 0.1093)
 BATTLE_PASS_REGION = Region(0.1234, 0.0389, 0.1234, 0.0389)
 CLAIM_ALL_REGION = Region(0.5047, 0.7648, 0.5047, 0.7648)
+USE_LUNACY_REGION = Region(0.4453, 0.2815, 0.5474, 0.3398)
+MAKE_MODULES_REGION = Region(0.3411, 0.2944, 0.4437, 0.3398)
+LUNACY_CONFIRM_REIGON = Region(0.5016, 0.7009, 0.6849, 0.7750)
 PASS_POINTS = [(0.8495, 0.3287)]
 GET_DAILY_POINTS = [(0.4000, 0.3194), (0.4000, 0.4389), (0.4036, 0.5593), (0.4031, 0.6815), (0.3990, 0.7870)]
 LUX_POINTS = [(0.3484, 0.2472)]
 BACK_ARROW_POINTS = [(0.0734, 0.0667)]
-
+MODULES_POINTS = [(0.3042, 0.9111)]
+MODULES_MAX_ARROW = [(0.6276, 0.4602)]
 program = OcrAgent()
 
+def process_mid_fight_q():
+    program.click_skip_5()
+    sleep_s(1)
+    for level in ["very high", "high", "normal", "low", "very low"]:
+        if program.click_text(level, SKILL_CHECK_REGION):
+            break
+    sleep_s(1)
+    program.click_text("commence", COMMENCE_AND_CONTINUE_REGION)
+    sleep_s(2)
+    program.click_skip_5()
+    sleep_s(1)
+    program.click_text("continue", COMMENCE_AND_CONTINUE_REGION)
+
+def process_modules():
+    program.click_points(MODULES_POINTS)
+    sleep_s(1)
+    program.click_text("use", USE_LUNACY_REGION)
+    sleep_s(0.3)
+    program.click_text("confirm", LUNACY_CONFIRM_REIGON, clicks=2)
+    sleep_s(0.5)
+    program.click_text("modules", MAKE_MODULES_REGION)
+    sleep_s(0.5)
+    program.click_points(MODULES_MAX_ARROW)
+    sleep_s(0.5)
+    program.click_text("confirm", LUNACY_CONFIRM_REIGON)
+    sleep_s(0.5)
+    program.click_points(MODULES_POINTS)
+    sleep_s(0.5)
+#make modules first twice!
+process_modules()
 program.click_text("drive", DRIVE_REGION)
 sleep_s(0.5)
 program.click_points(LUX_POINTS)
@@ -239,7 +280,7 @@ program.click_text("confirm", CONFIRM_REGION)
 
 program.click_text("thread", THREAD_TAB_REGION)
 
-count = 3
+count = 1
 
 while count > 0:
     if program.click_text("enter", THREAD_ENTER_REGION):
@@ -250,8 +291,11 @@ while count > 0:
         while True:
             if program.click_text("confirm", CONFIRM_REGION, move_to=False, clicks=0):
                 break
+            elif program.click_text("skip", SKIP_REGION, move_to=False, clicks=0):
+                process_mid_fight_q()
             else:
                 if program.click_text("win", WIN_REGION, move_to=False, clicks=0):
+                    pyautogui.click()
                     pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); 
                     program.move_point((0.0792, 0.9352))
                     sleep_s(3.0)
