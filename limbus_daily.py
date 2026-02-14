@@ -105,7 +105,7 @@ class OcrAgent:
 
             log(f"🔍 OCR line: '{text_lower}' | tokens={tokens} | conf={conf:.2f}")
 
-            if target_lower not in text_lower:
+            if not any(target_lower in tk for tk in text_lower.split()):
                 continue
 
             xs = [p[0] for p in bbox]
@@ -321,6 +321,8 @@ program.click_text("to", TO_BATTLE_REGION)
 while True:
     if program.click_text("confirm", CONFIRM_REGION, move_to=False, clicks=0):
         break
+    elif program.click_text("to", TO_BATTLE_REGION):
+        continue
     else:
         if program.click_text("win", WIN_REGION, move_to=False, clicks=0):
             pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); 
@@ -356,7 +358,12 @@ while count > 0:
                     pyautogui.press('p'); sleep_s(0.2); pyautogui.press('enter'); 
                     program.move_point((0.0792, 0.9352))
                     sleep_s(3.0)
-        count -= 1
+    else:
+        program.click_text("confirm", CONFIRM_REGION)
+        continue
+    count -= 1
+
+    
 
 #last page
 sleep_s(1)
