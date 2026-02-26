@@ -60,20 +60,22 @@ Prompts for:
 
 - team status effect (for starting EGO pick)
 
-#Limbus Dailies auto run
+# Limbus Dailies auto run
 
-# For doing dailies it includes:
+## Dailies includes:
 ```
 - Do exp level once
 - Do thread 3 times
 - used up 78 lunacy(26 + 52) total to gain Enkephalin then convert all to Modules
-- help you claim daily rewards and battle pass
+- help you claim daily rewards token and battle pass
 NOTE: Current version does allow you to preselect a team of 6 and no more or else it'll causes the program to crash
 ```
-# Command to set up for .\limbus_daily.py
+## Command to set up for .\limbus_daily.py
 ```
 pip install easyocr pyautogui keyboard opencv-python numpy mss torch torchvision pillow
 ```
 ```
 python .\limbus_daily.py
 ```
+
+# How to set up discord bot
