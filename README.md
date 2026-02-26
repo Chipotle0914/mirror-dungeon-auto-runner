@@ -60,14 +60,7 @@ Prompts for:
 
 - team status effect (for starting EGO pick)
 
-
-```
-python .\limbus_thread.py
-```
-Prompts for:
-
-- how many runs
-- press control + g to start(make sure you are at the thread screen before you press it)
+#Limbus Dailies auto run
 
 # For doing dailies it includes:
 ```
