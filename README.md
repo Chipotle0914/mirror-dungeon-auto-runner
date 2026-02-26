@@ -68,7 +68,7 @@ Prompts for:
 - Do thread 3 times
 - used up 78 lunacy(26 + 52) total to gain Enkephalin then convert all to Modules
 - help you claim daily rewards token and battle pass
-NOTE: Current version does allow you to preselect a team of 6 and no more or else it'll causes the program to crash
+NOTE: Current version does require you to preselect a team of 6 and no more or else it'll crash
 ```
 ## Command to set up for .\limbus_daily.py
 ```
