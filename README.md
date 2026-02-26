@@ -69,8 +69,8 @@ Prompts for:
 - how many runs
 - press control + g to start(make sure you are at the thread screen before you press it)
 
-```
 # For doing dailies it includes:
+```
 - Do exp level once
 - Do thread 3 times
 - used up 78 lunacy(26 + 52) total to gain Enkephalin then convert all to Modules
