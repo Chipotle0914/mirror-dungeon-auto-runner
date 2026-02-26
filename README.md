@@ -70,13 +70,14 @@ Prompts for:
 - press control + g to start(make sure you are at the thread screen before you press it)
 
 ```
-For doing dailies which includes the following
+#For doing dailies which includes the following
 - Do exp level once
 - Do thread 3 times
 - used up 78 lunacy(26 + 52) total to gain Enkephalin then convert all to Modules
+- help you claim daily rewards and battle pass
 NOTE: Current version does allow you to preselect a team of 6 and no more or else it'll causes the program to crash
 ```
-Command to set up for .\limbus_daily.py
+#Command to set up for .\limbus_daily.py
 ```
 pip install easyocr pyautogui keyboard opencv-python numpy mss torch torchvision pillow
 ```
