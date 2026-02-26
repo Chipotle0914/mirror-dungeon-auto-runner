@@ -79,3 +79,8 @@ python .\limbus_daily.py
 ```
 
 # How to set up discord bot
+this is related to the code in the limbus_md_app.py
+```
+from auto_note.limbus_bot import send_me
+```
+Set up the discord bot yourself and make the function name & from where correctly
