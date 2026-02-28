@@ -44,7 +44,6 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 ```
 
 ### 2) Game Setup (Important)
-- Resolution: 1920×1080
 - Fullscreen (or borderless fullscreen)
 - Windows Display Scale: 100%
 - Turn off overlays (Steam, FPS, GPU, chat) that cover the UI.
@@ -61,11 +60,27 @@ Prompts for:
 
 - team status effect (for starting EGO pick)
 
+# Limbus Dailies auto run
 
+## Dailies includes:
 ```
-python .\limbus_thread.py
+- Do exp level once
+- Do thread 3 times
+- used up 78 lunacy(26 + 52) total to gain Enkephalin then convert all to Modules
+- help you claim daily rewards token and battle pass
+NOTE: Current version does require you to preselect a team of 6 and no more or else it'll crash
 ```
-Prompts for:
+## Command to set up for .\limbus_daily.py
+```
+pip install easyocr pyautogui keyboard opencv-python numpy mss torch torchvision pillow
+```
+```
+python .\limbus_daily.py
+```
 
-- how many runs
-- press control + g to start(make sure you are at the thread screen before you press it)
+# How to set up discord bot
+this is related to the code in the limbus_md_app.py
+```
+from auto_note.limbus_bot import send_me
+```
+Set up the discord bot yourself and make the function name & from where correctly
