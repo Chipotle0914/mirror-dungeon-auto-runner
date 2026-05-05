@@ -83,7 +83,7 @@ END_TOP_LEFT      = Region(0.0005, 0.0907, 0.3203, 0.2815)
 END_CONFIRM       = Region(0.6839, 0.6769, 0.9635, 0.9500)
 REFRESH_REGION    = Region(0.6786, 0.0000, 0.9885, 0.1481)
 
-DRIVE_REGION      = Region(0.4411, 0.7370, 0.9995, 0.9991)
+DRIVE_REGION      = Region(0.4891, 0.8259, 0.9927, 0.9861)
 MD_REGION         = Region(0.2417, 0.2639, 0.5078, 0.5463)
 ENTER_MD_REGION   = Region(0.4938, 0.6269, 0.9714, 0.7917)
 BEG_EGO_REGION    = Region(0.0870, 0.1713, 0.5906, 0.7778)
@@ -359,8 +359,16 @@ class Bot:
     def check_to_battle(self) -> bool:      return self.ocr.click_text("battle", TO_BATTLE_REGION, move_to=False, clicks=0)
     def check_reward(self) -> bool:         return self.ocr.click_text("reward", REWARD_REGION, move_to=False, clicks=0)
     def check_confirm(self) -> bool:        return self.ocr.click_text("confirm", CONFIRM_REGION, move_to=False, clicks=0)
-    def check_skip(self) -> bool:           return self.ocr.click_text("skip", SKIP_REGION, move_to=False, clicks=0)
-    def click_skip(self, n: int = 5) -> bool: return self.ocr.click_text("skip", SKIP_REGION, clicks=n)
+    def check_skip(self) -> bool:           return self.ocr.click_text("skip", COMMENCE_REGION, move_to=False, clicks=0)
+    def click_skip(self, n: int = 5) -> bool:
+        success = self.ocr.click_text("skip", COMMENCE_REGION, clicks=n)
+        # Move mouse slightly left after skip clicks
+        x, y = pyautogui.position()
+        pyautogui.moveTo(x - 200, y, duration=0.15)
+        log("↖️ Moved cursor away from SKIP button")
+        
+
+        return success
     def click_continue(self) -> bool:       return self.ocr.click_text("continue", COMMENCE_REGION)
     def click_commence(self) -> bool:       return self.ocr.click_text("commence", COMMENCE_REGION)
     def click_proceed(self) -> bool:        return self.ocr.click_text("proceed", COMMENCE_REGION)
@@ -371,7 +379,7 @@ class Bot:
 
     def enter_check(self) -> bool:          return self.ocr.click_text("enter", ENTER_REGION, move_to=False, clicks=0)
     def check_p_enter(self) -> bool:
-        return (self.ocr.click_text("win", P_ENTER_REGION, move_to=False, clicks=0) or
+        return (self.ocr.click_text("win", P_ENTER_REGION, move_to=False, clicks=0) and
                 self.ocr.click_text("damage", P_ENTER_REGION, move_to=False, clicks=0))
 
     def check_leave(self) -> bool:          return self.ocr.click_text("leave", LEAVE_REGION, move_to=False, clicks=0)
@@ -557,6 +565,7 @@ class Bot:
         return False
 
     def process_question(self, mid_fight: bool = False) -> None:
+        
         self.click_skip(n=5)
         while True:
 
@@ -630,8 +639,9 @@ class Bot:
                 self.yolo_click(TRAIN)
             else:
                 pyautogui.click()
-                pyautogui.scroll(40)
-
+                pyautogui.scroll(-5)
+                sleep_s(1)
+              
                 
 
     def process_shop_boss_packs(self) -> bool:
@@ -669,7 +679,11 @@ class Bot:
         # FINAL fallback attempt
         self.move_away()
         self.yolo_click(GOOD_PACK, drag_down=True)
+        #click on bad pack and proceed
         sleep_s(3.0)
+        self.move_away()
+        sleep_s(1.5)
+        self.yolo_click(BAD_PACK, drag_down=True)
         return False
     # ---- Subroutines used in flows ----
 
@@ -689,8 +703,13 @@ class Bot:
 
     # ---- End game ----
     def end_md(self) -> None:
-        self.click_claim(); sleep_s(0.8)
         self.click_claim()
+        sleep_s(0.8) 
+        self.move_away()
+        sleep_s(0.8)
+        self.click_claim()
+        sleep_s(0.8)
+        self.move_away()
         for _ in range(3):
             self.click_confirm(); sleep_s(1.0)
             self.move_away();     sleep_s(0.5)
@@ -705,7 +724,7 @@ def main():
     MODEL_PATH = 'yolov5/runs/train/mirror_dungeon_train10/weights/best.pt'  
     bot = Bot(MODEL_PATH, yolo_conf=0.80)
 
-    shop_flag = 0
+    # shop_flag = 0
     run_num   = int(input("Enter how many runs: "))
     skip_start= int(input("May resume in the run: "))
     se_type   = input("Enter status effect of your team: ")
@@ -719,7 +738,7 @@ def main():
         skip_start = 0
         while True:
             # “enter” means we’re at the shop door/boss path
-            if bot.ocr.click_text("enter", ENTER_REGION, move_to=False, clicks=0):
+            if bot.ocr.click_text("enter", ENTER_REGION, move_to=False, clicks=0) or bot.check_leave():
                 log("processing boss until next level!!!")
                 if bot.process_shop_boss_packs():
                     log("We DONE!!!")
@@ -729,9 +748,9 @@ def main():
             else:
                 log("processing until shop!!!")
                 bot.process_start_to_shop()
-                if shop_flag:
-                    log("User wants to stop at shop")
-                    break
+                # if shop_flag:
+                #     log("User wants to stop at shop")
+                #     break
                 sleep_s(2.0)
 
         bot.end_md()
