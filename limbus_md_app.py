@@ -361,7 +361,7 @@ class Bot:
     def check_to_battle(self) -> bool:      return self.ocr.click_text("battle", TO_BATTLE_REGION, move_to=False, clicks=0)
     def check_reward(self) -> bool:         return self.ocr.click_text("reward", REWARD_REGION, move_to=False, clicks=0)
     def check_confirm(self) -> bool:        return self.ocr.click_text("confirm", CONFIRM_REGION, move_to=False, clicks=0)
-    def check_event_effect(self) -> bool: return self.orc.click_text("effect", EVENT_EFFECT_REGION, move_to=False, clicks=0)
+    def check_event_effect(self) -> bool: return self.ocr.click_text("effect", EVENT_EFFECT_REGION, move_to=False, clicks=0)
     def check_skip(self) -> bool:           return self.ocr.click_text("skip", COMMENCE_REGION, move_to=False, clicks=0)
     def click_skip(self, n: int = 5) -> bool:
         success = self.ocr.click_text("skip", COMMENCE_REGION, clicks=n)
