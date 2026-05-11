@@ -82,6 +82,7 @@ SKILL_CHECK_REGION= Region(0.0042, 0.8185, 0.7849, 0.8759)
 END_TOP_LEFT      = Region(0.0005, 0.0907, 0.3203, 0.2815)
 END_CONFIRM       = Region(0.6839, 0.6769, 0.9635, 0.9500)
 REFRESH_REGION    = Region(0.6786, 0.0000, 0.9885, 0.1481)
+EVENT_EFFECT_REGION = Region(0.2984, 0.1481, 0.7031, 0.3074)
 
 DRIVE_REGION      = Region(0.4891, 0.8259, 0.9927, 0.9861)
 MD_REGION         = Region(0.2417, 0.2639, 0.5078, 0.5463)
@@ -91,6 +92,7 @@ REFUSE_GIFT_REGION= Region(0.6120, 0.7333, 0.9141, 0.9102)
 CLAIM_REWARD_REGION = Region(0.5828, 0.6435, 0.9682, 0.9194)
 
 # Hardcoded click points (ratios)
+EVENT_EFFECT_CHOICE_B = [(0.6448, 0.4676)]
 BEG_BUFF_HARDCODE   = [(0.1922, 0.3454), (0.3495, 0.3454), (0.5010, 0.3546), (0.6568, 0.3565)]
 #BEG_BUFF_HARDCODE   = []
 BEG_TOP_2_EGO       = [(0.7438, 0.3620), (0.7411, 0.5074)]
@@ -359,6 +361,7 @@ class Bot:
     def check_to_battle(self) -> bool:      return self.ocr.click_text("battle", TO_BATTLE_REGION, move_to=False, clicks=0)
     def check_reward(self) -> bool:         return self.ocr.click_text("reward", REWARD_REGION, move_to=False, clicks=0)
     def check_confirm(self) -> bool:        return self.ocr.click_text("confirm", CONFIRM_REGION, move_to=False, clicks=0)
+    def check_event_effect(self) -> bool: return self.orc.click_text("effect", EVENT_EFFECT_REGION, move_to=False, clicks=0)
     def check_skip(self) -> bool:           return self.ocr.click_text("skip", COMMENCE_REGION, move_to=False, clicks=0)
     def click_skip(self, n: int = 5) -> bool:
         success = self.ocr.click_text("skip", COMMENCE_REGION, clicks=n)
@@ -376,7 +379,7 @@ class Bot:
     def click_shop_confirm(self) -> bool:   return self.ocr.click_text("confirm", SHOP_CONFIRM, y_offset_frac=-0.0224)
     def click_refresh(self) -> bool:        return self.ocr.click_text("refresh", REFRESH_REGION)
     def click_claim(self) -> bool:          return self.ocr.click_text("claim", CLAIM_REWARD_REGION)
-
+    
     def enter_check(self) -> bool:          return self.ocr.click_text("enter", ENTER_REGION, move_to=False, clicks=0)
     def check_p_enter(self) -> bool:
         return (self.ocr.click_text("win", P_ENTER_REGION, move_to=False, clicks=0) and
@@ -551,6 +554,13 @@ class Bot:
             # Skill check flow
             elif self.check_skip():
                 self.process_question(mid_fight=True); continue
+            
+
+            # sometimes you get Moronic Select Event effects
+                
+            elif self.check_event_effect():
+                self.click_list_points(EVENT_EFFECT_CHOICE_B); sleep_s(1)
+                self.click_confirm(); sleep_s(1)
 
             else:
                 # “P / Enter” nudge for special boss UI
@@ -679,6 +689,7 @@ class Bot:
         # FINAL fallback attempt
         self.move_away()
         self.yolo_click(GOOD_PACK, drag_down=True)
+        sleep_s(3.0)
         #click on bad pack and proceed
         sleep_s(3.0)
         self.move_away()
