@@ -20,6 +20,14 @@ pip install keyboard
 pip install --upgrade numpy pandas
 pip install seaborn
 pip install ultralytics
+pip install mss
+pip install torch
+pip install discord.py
+pip install tqdm
+pip install gitpython
+pip install matplotlib
+pip install scipy
+pip install pyyaml
 ```
 ## PyTorch (pick ONE line)
 
